@@ -1,0 +1,7 @@
+{
+	"name":"generateToken",
+	"param":{
+		"email":"***REMOVED***",
+		"password":"testpassword"
+	}
+}
