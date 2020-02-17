@@ -10,9 +10,15 @@
  */
     
     // requires composer autoload script for firebase JWT extension which is used to generate tokens
-    require '../vendor/autoload.php';
+    require_once('../vendor/autoload.php');
+    
+    //moved from rest.php. Better include here or move to functions.php
+    require_once('settings.php');
+    
     // requires all classes which are somewhere in project. <classname>.php 
     require_once('functions.php');
+    
+    
     $api = new Api();
     $api->processApi();
 

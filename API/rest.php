@@ -6,12 +6,16 @@
  * @author Ville Kouhia
  *
  * Changelog
- * 15.2.2020 First implementation
+ *  + 15.2.2020 First implementation
+ *  + 16.2.2020 Cleaned code a bit and more comments
+ *  + 17.2.2020 Added validateRefreshToken, still in process
+ *              moved db connection introduction from __construct to function
+ *  
  *
  */
 use Firebase\JWT\JWT;
 
-require_once 'settings.php';
+
 
 class Rest
 {
@@ -29,15 +33,15 @@ class Rest
         }
         $input_stream = fopen('php://input', 'r');
         $this->request = stream_get_contents($input_stream);
+        
         $this->validateRequest($this->request);
         
         // echo ("Service name: " . $this->serviceName . "\n"); //debug
-        
-        $db = new Database();
-        $this->database = $db->connect();
-        
+
         if ('generatetoken' != strtolower($this->serviceName)) {
-            $this->validateToken();
+            $this->validateAccessToken();
+        } else if ('validaterefreshtoken' != strtolower($this->service)){
+            $this->validateRefreshToken();
         }
         
     }
@@ -133,11 +137,37 @@ class Rest
         return $value;
     }
     
-    public function validateToken() {
+    /**
+     * validateRefreshToken
+     * 
+     * validates refresh token if it is still good to use
+     * 
+     */
+    public function validateRefreshToken()
+    {
         try {
+            echo  $this->userId;
+            
+        } catch (Exception $e) {
+            $this->throwException(REFRESH_TOKEN_ERROR, $e->getMessage());
+        }
+    }
+    
+    /**
+     * validateAccessToken
+     * 
+     * validates access token if it is still good to use 
+     */
+    public function validateAccessToken()
+    {
+        try {
+            
+            //moved SQL connection from __construct(). At least do not make so many connections to database. 
+            $db = new Database();
+            $this->database = $db->connect();
             // Try to get token from header
             $token = $this->getBearerToken();
-            $payload = JWT::decode($token, API_KEY, [''.API_ALGORITHM.'']);
+            $payload = JWT::decode($token, API_ACCESS_TOKEN_KEY, [''.API_ALGORITHM.'']);
             
             $sql = $this->database->prepare("SELECT * FROM users WHERE Id = :id");
             $sql->bindParam(":id", $payload->userId);
@@ -154,7 +184,7 @@ class Rest
             $this->userId = $payload->userId;
             
         } catch (Exception $e) {
-            $this->throwException(ACCESS_TOKEN_ERRORS, $e->getMessage());
+            $this->throwException(ACCESS_TOKEN_ERROR, $e->getMessage());
         }
         
     }
@@ -228,7 +258,9 @@ class Rest
     }
     
     /**
-     * 
+     * getAuthorizationHeader
+     * TODO: Probalby should use zend engine or similar to handle better getting right information from headers. 
+     *       
      * 
      */
     public function getAuthorizationHeader() 
@@ -241,11 +273,11 @@ class Rest
         else if (isset($_SERVER['HTTP_AUTHORIZATION'])) {
             $headers = trim($_SERVER['HTTP_AUTHORIZATION']);
         } elseif (function_exists('apache_request_headers')) {
-            $requestHeaders = apache_request_headers();
-            // Server-side fix for bug in old Android versions (a nice side-effect of this fix means we don't care about capitalization for Authorization)
-            $requestHeaders = array_combine(array_map('ucwords', array_keys($requestHeaders)), array_values($requestHeaders));
-            if (isset($requestHeaders['Authorization'])) {
-                $headers = trim($requestHeaders['Authorization']);
+            $apacheHeaders = apache_request_headers();
+            
+            $apacheHeaders = array_combine(array_map('ucwords', array_keys($apacheHeaders)), array_values($apacheHeaders));
+            if (isset($apacheHeaders['Authorization'])) {
+                $headers = trim($apacheHeaders['Authorization']);
             }
         }
         
