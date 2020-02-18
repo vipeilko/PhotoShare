@@ -15,7 +15,6 @@ define('TOKEN_TYPE_ACCESS', 1);             // Token type 1 = access and 2 = ref
 define('TOKEN_TYPE_REFRESH', 2);            // in early versions we only track refresh tokens
 
 
-/* database password 52392c6FBKZ8ebZw89dy5zKh4DsvNbst */
 
 /*
  * Data Type
@@ -56,11 +55,11 @@ define('USER_IS_DISABLED',              109);
  */
 $error_messages = array (
     "REQUEST_METHOD_NOT_VALID"      => array   ("code" => 100,
-                                                "fin" => "Pyyntö ei ole kelvollinen",
+                                                "fin" => "PyyntÃ¶ ei ole kelvollinen",
                                                 "eng" => "Request Method is not valid."
                                                 ),
     "REQUEST_CONTENTTYPE_NOT_VALID" => array   ("code" => 101,
-                                                "fin" => "Pyydetty sisältötyyppi ei ole kelvollinen",
+                                                "fin" => "Pyydetty sisÃ¤ltÃ¶tyyppi ei ole kelvollinen",
                                                 "eng" => "Requested content-type is not valid"
                                                 ),
     "REQUEST_NOT_VALID"             => array   ("code" => 102,
