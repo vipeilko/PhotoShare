@@ -48,6 +48,7 @@ define('API_PARAM_REQUIRED',            106);
 define('API_DOES_NOT_EXIST',            107);
 define('INVALID_USER_PASS',             108);
 define('USER_IS_DISABLED',              109);
+define('NO_MATCHING_REFRESH_TOKEN',     110);
 
 /**
  * TODO: Do we need general place for error messages?
@@ -100,7 +101,7 @@ define('SUCCESS_RESPONSE',      200);
 define('JWT_PROCESSING_ERROR',                      300);
 define('COULD_NOT_GET_AUTHORIZATION_FROM_HEADER',   301);
 define('ACCESS_TOKEN_ERROR',                        302);
-define('REFRESH_TOKEN_ERROR',                       302);
+define('REFRESH_TOKEN_ERROR',                       303);
 define('CLASS_NOT_FOUND',                           304);
 
 ?>

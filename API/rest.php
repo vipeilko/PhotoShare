@@ -10,7 +10,7 @@
  *  + 16.2.2020 Cleaned code a bit and more comments
  *  + 17.2.2020 Added validateRefreshToken, still in process
  *              moved db connection introduction from __construct to function
- *  
+ *  + 18.2.2020 Continued refreshtoken handling
  *
  */
 use Firebase\JWT\JWT;
@@ -19,29 +19,45 @@ use Firebase\JWT\JWT;
 
 class Rest
 {
-
-    protected $request;
-    protected $serviceName;
-    protected $param;
+    protected $request;         // contains http post inputstream
+    protected $serviceName;     // contains requested service name
+    protected $param;           // cointains parameters in request
 
     public function __construct()
     {
-        
+        // API accepts only POST request for now
         if ($_SERVER['REQUEST_METHOD'] != 'POST') {
             // echo "Method is not post";
             $this->throwException(REQUEST_METHOD_NOT_VALID, 'Request Method is not valid');
         }
+        // open input stream from HTTP POST
         $input_stream = fopen('php://input', 'r');
         $this->request = stream_get_contents($input_stream);
         
         $this->validateRequest($this->request);
         
-        // echo ("Service name: " . $this->serviceName . "\n"); //debug
+        echo ("Service name: " . $this->serviceName . "\n"); //debug
 
+        /*
         if ('generatetoken' != strtolower($this->serviceName)) {
             $this->validateAccessToken();
-        } else if ('validaterefreshtoken' != strtolower($this->service)){
-            $this->validateRefreshToken();
+        }*/
+        // Switch-case to handle different type request
+        switch ($this->serviceName) 
+        {
+            case "validateAccessToken":
+                echo $this->serviceName;
+                $this->validateAccessToken();
+                break;
+            case "validateRefreshToken":
+                $this->validateRefreshToken();
+                break;
+            case "generateToken":
+                //
+                break;
+            default:
+                //Should not get here ever because this is already handeled by processApi()
+                $this->throwException(API_DOES_NOT_EXIST, "API does not exist.");
         }
         
     }
@@ -52,24 +68,26 @@ class Rest
      * */
     public function validateRequest($request)
     { 
-
+        // only JSON content is accepted
         if ($_SERVER['CONTENT_TYPE'] != 'application/json') {
             $this->throwException(REQUEST_CONTENTTYPE_NOT_VALID, 'Requested content-type is not valid');
         }
-        
+        // decode json data
         $data = json_decode($this->request, true);
 
-        if (!isset($data['name']) or $data['name'] == "") {
+        // if post serviceName is not set or empty throws exception 
+        if (!isset($data['serviceName']) or $data['serviceName'] == "") {
             $this->throwException(API_NAME_REQUIRED, "API name required.");
         }
-        $this->serviceName = $data['name'];
-
+        // otherwise save requested serviceName
+        $this->serviceName = $data['serviceName'];
+        
+        // parameters need to be an array
         if (!is_array($data['param'])) {
             $this->throwException(API_PARAM_REQUIRED, "API PARAM required.");
         }
         $this->param = $data['param'];
         // print_r($data);
-
     }
 
     /**
@@ -146,7 +164,24 @@ class Rest
     public function validateRefreshToken()
     {
         try {
-            echo  $this->userId;
+            $db = new Database();
+            $this->database = $db->connect();
+            // Try to get token from header
+            $token = $this->getBearerToken();
+            //$payload = JWT::decode($token, API_ACCESS_TOKEN_KEY, [''.API_ALGORITHM.'']);
+           
+            $sql = $this->database->prepare("SELECT * FROM tokens WHERE Token = :token");
+            $sql->bindParam(":token", $token);
+            $sql->execute();
+            $tokens = $sql->fetch(PDO::FETCH_ASSOC);
+            //print_r($tokens);
+            
+            // if there is no any results from db return that there is no matchign refresh token
+            if (!is_array($token)) {
+                $this->response(NO_MATCHING_REFRESH_TOKEN, "No matching refresh token found.");    
+            }
+            //TODO: CONTINUE REFRESHTOKEN FROM HERE
+            
             
         } catch (Exception $e) {
             $this->throwException(REFRESH_TOKEN_ERROR, $e->getMessage());
@@ -165,10 +200,11 @@ class Rest
             //moved SQL connection from __construct(). At least do not make so many connections to database. 
             $db = new Database();
             $this->database = $db->connect();
+            
             // Try to get token from header
             $token = $this->getBearerToken();
+            echo("TOKEN: " .$token."\n");
             $payload = JWT::decode($token, API_ACCESS_TOKEN_KEY, [''.API_ALGORITHM.'']);
-            
             $sql = $this->database->prepare("SELECT * FROM users WHERE Id = :id");
             $sql->bindParam(":id", $payload->userId);
             $sql->execute();
@@ -201,7 +237,7 @@ class Rest
      */
     public function throwException($code, $message)
     {
-        header("content-type: application/json");
+        header("content-type: application/json; charset=utf-8");
         $error_message = json_encode([
             'error' => [
                 'status' => $code,
@@ -223,7 +259,7 @@ class Rest
     
     public function response($code, $data)
     {
-        header("content-type: application/json");
+        header("content-type: application/json; charset=utf-8");
         $response = json_encode([
             'response' => [
                 'status' => $code,
