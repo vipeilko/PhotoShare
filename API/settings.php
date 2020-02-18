@@ -15,7 +15,7 @@ define('TOKEN_TYPE_ACCESS', 1);             // Token type 1 = access and 2 = ref
 define('TOKEN_TYPE_REFRESH', 2);            // in early versions we only track refresh tokens
 
 
-/* database password examplePass */
+/* database password 52392c6FBKZ8ebZw89dy5zKh4DsvNbst */
 
 /*
  * Data Type
