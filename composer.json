@@ -1,6 +1,0 @@
-{
-	"name" : "photoshare/photoshare",
-	"require": {
-		"firebase/php-jwt": "^5.0"
-	}
-}
