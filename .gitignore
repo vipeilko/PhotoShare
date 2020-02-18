@@ -46,3 +46,4 @@ vendor/firebase/php-jwt/src/BeforeValidException.php
 vendor/firebase/php-jwt/src/ExpiredException.php
 vendor/firebase/php-jwt/src/JWT.php
 vendor/firebase/php-jwt/src/SignatureInvalidException.php
+API/credentials.php

@@ -4,13 +4,26 @@
 
  * 
  */
-class Database
-{
 
-    private $server = 'exampleHost';
-    private $databasename = 'exampleDbName';
-    private $user = 'exampleDbName';
-    private $password = 'examplePass';
+
+require('credentials.php');
+
+class Database
+{   
+    private $server = null;
+    private $databasename = null;
+    private $user = null;
+    private $password = null;
+    
+    public function __construct () 
+    {
+        $credentials = new credentials();
+        $this->password = $credentials->getPassword();
+        $this->user = $credentials->getDbUser();
+        $this->databasename = $credentials->getDatabaseName();
+        $this->server = $credentials->getServer();
+    }
+    
 
     public function connect()
     {
