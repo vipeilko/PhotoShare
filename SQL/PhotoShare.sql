@@ -58,7 +58,7 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`Id`, `Email`, `Password`, `FirstName`, `LastName`, `Disabled`, `LastLogin`, `CreatedOn`) VALUES
-(1, 'testi@juu.com', 'ville123', 'Ville', 'Kouhia', 0, '2020-02-15 15:41:31', '2020-02-15 15:41:31'),
+(1, 'testi@juu.com', 'ville123', 'dd', 'dd', 0, '2020-02-15 15:41:31', '2020-02-15 15:41:31'),
 (2, 'ville@jee.com', 'testpassword', 'Etunimi', 'Sukunimi', 0, '2020-02-15 15:41:31', '2020-02-15 15:41:31');
 
 --
