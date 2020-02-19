@@ -49,6 +49,7 @@ define('API_DOES_NOT_EXIST',            107);
 define('INVALID_USER_PASS',             108);
 define('USER_IS_DISABLED',              109);
 define('NO_MATCHING_REFRESH_TOKEN',     110);
+define('TOO_MANY_TOKENS',               111);
 
 /**
  * TODO: Do we need general place for error messages?

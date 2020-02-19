@@ -18,7 +18,8 @@
     // requires all classes which are somewhere in project. <classname>.php 
     require_once('functions.php');
     
-    
+    // TODO: need to solve how this ApiProcess should execute. Propably change __construct a littlebit
+    //       There is overlapping functions
     $api = new Api();
     $api->processApi();
 
