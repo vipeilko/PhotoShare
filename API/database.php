@@ -37,7 +37,7 @@ class Database
             $dbconnection->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
             // For debuggin
-            echo 'Database connection status: ' . $dbconnection->getAttribute(PDO::ATTR_CONNECTION_STATUS) ."\n";
+            //echo 'Database connection status: ' . $dbconnection->getAttribute(PDO::ATTR_CONNECTION_STATUS) ."\n"; //debug
             return $dbconnection;
         } catch (Exception $e) {
             echo ("Database Error: " . $e->getMessage());

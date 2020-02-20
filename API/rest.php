@@ -2,7 +2,7 @@
 /**
  * Rest() 
  * 
- * @version 0.0.1
+ * @version 0.0.2
  * @author Ville Kouhia
  *
  * Changelog
@@ -11,7 +11,11 @@
  *  + 17.2.2020 Added validateRefreshToken, still in process
  *              moved db connection introduction from __construct to function
  *  + 18.2.2020 Continued refreshtoken handling
- *
+ *  + 19.2.2020 RefreshToken db connections and handling
+ *  + 20.2.2020 Finnished refreshToken. User can't renew tokens forever anymore with refreshToken. 
+ *              From first request of tokens user needs to pass credentials again in AGE_OF_REFRESH_TOKEN 
+ *              seconds. Default 86 400 seconds or 1 day. More specific throw exceptions on database connections.
+ *              
  */
 use Firebase\JWT\JWT;
 
@@ -37,7 +41,7 @@ class Rest
         
         $this->validateRequest($this->request);
         
-        echo ("Service name: " . $this->serviceName . "\n"); //debug
+        //echo ("Service name: " . $this->serviceName . "\n"); //debug
 
         /*
         if ('generatetoken' != strtolower($this->serviceName)) {
@@ -161,27 +165,43 @@ class Rest
     }
         
     /**
+     * generateTokens
      * 
      * @param int $userid
+     * @param int $refreshTokenExp
      * 
-     * Only call this function after validation
+     * Generates always both tokens for $userid. If refreshtokenexp is anything else than 0 it will use it as experiation date of refreshtoken.
+     * Otherwise refreshToken is valid for one day by default. Configurable from settings.php.
+     * 
+     * 
      */
-    public function generateTokens($userid) 
+    public function generateTokens($userid, $refreshTokenExp) 
     {
-        echo"USERID :" . $userid ."\n";
+        //echo"USERID :" . $userid ."\n"; // debug
         $accessTokenPayload = [
             'iat' => time(),                                    // time of issue
             'iss' => gethostname().'/'.$_SERVER['SERVER_ADDR'], // gets hostname and ip address to issuer
             'exp' => time() + (AGE_OF_ACCESS_TOKEN),            // token experiation time
             'userId' => $userid                                 // userid to include in token
         ];
-        
-        $refreshTokenPayload = [
-            'iat' => time(),                                    // time of issue
-            'iss' => gethostname().'/'.$_SERVER['SERVER_ADDR'], // gets hostname and ip address to issuer
-            'exp' => time() + (AGE_OF_REFRESH_TOKEN),           // token experiation time
-            'userId' => $userid                                 // userid to include in token
-        ];
+        // if refreshtokenexp is zero do basic payload
+        if ( $refreshTokenExp == 0 ) {
+            $refreshTokenPayload = [
+                'iat' => time(),                                    // time of issue
+                'iss' => gethostname().'/'.$_SERVER['SERVER_ADDR'], // gets hostname and ip address to issuer
+                'exp' => time() + (AGE_OF_REFRESH_TOKEN),           // token experiation time
+                'userId' => $userid                                 // userid to include in token
+            ];
+        } 
+        // else use orginal refreshtoken experiation time.
+        else { 
+            $refreshTokenPayload = [
+                'iat' => time(),                                    // time of issue
+                'iss' => gethostname().'/'.$_SERVER['SERVER_ADDR'], // gets hostname and ip address to issuer
+                'exp' => $refreshTokenExp,                          // token experiation time
+                'userId' => $userid                                 // userid to include in token
+            ];
+        }
         
         try {
             //Generate both tokens
@@ -193,18 +213,16 @@ class Rest
         }
         
         //TODO: COMBINE THESE TWO UPDATES TO ONE FUNCTION 
-        //TODO: INSERT PART NOT WORKING CORRECTLY
-
         
         echo 'Database connection status after query: ' . $this->database->getAttribute(PDO::ATTR_CONNECTION_STATUS) ."\n"; // For debugg
         // DB UPDATE OF ACCESSTOKEN STARTS FROM HERE
         $tokenType = TOKEN_TYPE_ACCESS;
         $sql = null;
         $stmt = null;
-        
+        $count = null;
         $sql = ("SELECT UserId FROM tokens WHERE
-                                UserId = :UserId AND
-                                TokenType = :TokenType");
+                                    UserId = :UserId AND
+                                    TokenType = :TokenType");
         
         $stmt = $this->database->prepare($sql);
         $stmt->bindParam(':UserId',       $userid,     PDO::PARAM_STR);
@@ -212,105 +230,121 @@ class Rest
         
         $stmt->execute();
         $count = $stmt->rowCount();
-        echo("rowCount: " . $count . "\n");
+        //echo("rowCount: " . $count . "\n"); //debug
         
         if ( $count > 1 ) {
             $this->throwException(TOO_MANY_TOKENS, "Too many tokens. Hacking?");
-        } else if ( $count = 1 ) {
+        }
+        if ( $count == 1 ) {
             // if only one found, lets update it
             $sql = null;
             $stmt = null;
-            $sql = ("UPDATE tokens SET
-                        Token = :newToken WHERE
-                        UserId = :UserId AND
-                        TokenType = :TokenType");
-            $stmt = $this->database->prepare($sql);
-            $stmt->bindParam(':UserId',       $userid,        PDO::PARAM_STR);
-            $stmt->bindParam(':TokenType',    $tokenType,     PDO::PARAM_STR);
-            $stmt->bindParam(':newToken',     $accessToken,   PDO::PARAM_STR);
+            try {
+                $sql = ("UPDATE tokens SET
+                                Token = :newToken WHERE
+                                UserId = :UserId AND
+                                TokenType = :TokenType");
+                $stmt = $this->database->prepare($sql);
+                $stmt->bindParam(':UserId',       $userid,        PDO::PARAM_STR);
+                $stmt->bindParam(':TokenType',    $tokenType,     PDO::PARAM_STR);
+                $stmt->bindParam(':newToken',     $accessToken,   PDO::PARAM_STR);
+                
+                $stmt->execute();
+            } catch (Exception $e) {
+                $this->throwException(DATABASE_ERROR, "Database update error.");
+            }
             
-            $stmt->execute();
-            
-        } else {
-            echo "MOROOO: " . $refreshTokenPayload['exp'];
+        } 
+
+        if ( $count == 0){
+            //echo "RefreshTokenPayload exp: " . $refreshTokenPayload['exp'];
             //else it is zero and we insert it
-            $sql = ("INSERT INTO tokens(UserId,
-                                        TokenType,
-                                        Token,
-                                        Issued) VALUES (
-                                        :UserId,
-                                        :TokenType,
-                                        :Token,
-                                        :Issued)");
-            
-            $stmt = $this->database->prepare($sql);
-            $stmt->bindParam(':UserId',       $userid,                      PDO::PARAM_STR);
-            $stmt->bindParam(':TokenType',    $tokenType,                   PDO::PARAM_STR);
-            $stmt->bindParam(':Token',        $refreshToken,                PDO::PARAM_STR);
-            $stmt->bindParam(':Issued',       $accessTokenPayload['exp'],   PDO::PARAM_STR);
-            echo "Moi1";
-            $stmt->execute();
-            echo "Moi2";
+            try {
+                $sql = ("INSERT INTO tokens(UserId,
+                                            TokenType,
+                                            Token) VALUES (
+                                            :UserId,
+                                            :TokenType,
+                                            :Token)");
+                
+                $stmt = $this->database->prepare($sql);
+                $stmt->bindParam(':UserId',       $userid,                      PDO::PARAM_STR);
+                $stmt->bindParam(':TokenType',    $tokenType,                   PDO::PARAM_STR);
+                $stmt->bindParam(':Token',        $refreshToken,                PDO::PARAM_STR);
+        
+                $stmt->execute();
+            } catch (Exception $e) {
+                $this->throwException(DATABASE_ERROR, "Database insert error.");
+            }
         }
         // DB UPDATE OF ACCESSTOKEN ENDS HERE
         // DB UPDATE OF REFRESHTOKEN STARTS FROM HERE
         $tokenType = TOKEN_TYPE_REFRESH;
         $sql = null;
         $stmt = null;
-        
-        $sql = ("SELECT UserId FROM tokens WHERE 
-                                UserId = :UserId AND 
-                                TokenType = :TokenType");
-        
-        $stmt = $this->database->prepare($sql);
-        $stmt->bindParam(':UserId',       $userid,     PDO::PARAM_STR);
-        $stmt->bindParam(':TokenType',    $tokenType,  PDO::PARAM_STR);
-        
-        $stmt->execute();
-        $count = $stmt->rowCount();
+        try {
+            $sql = ("SELECT UserId FROM tokens WHERE 
+                                    UserId = :UserId AND 
+                                    TokenType = :TokenType");
+            
+            $stmt = $this->database->prepare($sql);
+            $stmt->bindParam(':UserId',       $userid,     PDO::PARAM_STR);
+            $stmt->bindParam(':TokenType',    $tokenType,  PDO::PARAM_STR);
+            
+            $stmt->execute();
+            $count = $stmt->rowCount();
+        } catch (Exception $e) {
+            $this->throwException(DATABASE_ERROR, "Could not fetch data from database.");
+        }
         //echo("rowCount: " . $count . "\n");
         
         if ( $count > 1 ) {
             $this->throwException(TOO_MANY_TOKENS, "Too many tokens. Hacking?");
-        } else if ( $count = 1 ) {
+        } 
+        
+        if ( $count == 1 ) {
             // if only one found, lets update it
             $sql = null;
             $stmt = null;
-            $sql = ("UPDATE tokens SET 
-                        Token = :newToken WHERE 
-                        UserId = :UserId AND 
-                        TokenType = :TokenType");
-            $stmt = $this->database->prepare($sql);
-            $stmt->bindParam(':UserId',       $userid,        PDO::PARAM_STR);
-            $stmt->bindParam(':TokenType',    $tokenType,     PDO::PARAM_STR);
-            $stmt->bindParam(':newToken',     $refreshToken,  PDO::PARAM_STR);
-            
-            $stmt->execute(); 
-        } else { 
+            try {
+                $sql = ("UPDATE tokens SET 
+                            Token = :newToken WHERE 
+                            UserId = :UserId AND 
+                            TokenType = :TokenType");
+                $stmt = $this->database->prepare($sql);
+                $stmt->bindParam(':UserId',       $userid,        PDO::PARAM_STR);
+                $stmt->bindParam(':TokenType',    $tokenType,     PDO::PARAM_STR);
+                $stmt->bindParam(':newToken',     $refreshToken,  PDO::PARAM_STR);
+                
+                $stmt->execute(); 
+            } catch (Exception $e) {
+                $this->throwException(DATABASE_ERROR, "Database update error.");
+            }
+        } 
+        if ( $count == 0 ){ 
             //else it is zero and we insert it 
-            $sql = ("INSERT INTO tokens(UserId,
-                                        TokenType,
-                                        Token,
-                                        Issued) VALUES (
-                                        :UserId,
-                                        :TokenType,
-                                        :Token,
-                                        :Issued)");
-            
-            $stmt = $this->database->prepare($sql);
-            $stmt->bindParam(':UserId',       $userid,                      PDO::PARAM_STR);
-            $stmt->bindParam(':TokenType',    $tokenType,                   PDO::PARAM_STR);
-            $stmt->bindParam(':Token',        $refreshToken,                PDO::PARAM_STR);
-            $stmt->bindParam(':Issued',       $refreshTokenPayload['exp'],  PDO::PARAM_STR);
-            
-            $stmt->execute();
+            try {
+                $sql = ("INSERT INTO tokens(UserId,
+                                            TokenType,
+                                            Token) VALUES (
+                                            :UserId,
+                                            :TokenType,
+                                            :Token)");
+                
+                $stmt = $this->database->prepare($sql);
+                $stmt->bindParam(':UserId',       $userid,                      PDO::PARAM_STR);
+                $stmt->bindParam(':TokenType',    $tokenType,                   PDO::PARAM_STR);
+                $stmt->bindParam(':Token',        $refreshToken,                PDO::PARAM_STR);
+                
+                $stmt->execute();
+            } catch (Exception $e) {
+                $this->throwException(DATABASE_ERROR, "Database insert error.");
+            }
         }
         // DB UPDATE OF REFRESHTOKEN ENDS HERE
-        
-        
-
-        
         // print_r($data); //Debug
+        
+        //After succesfully updating both tokens will return JSON to client
         $data = [
             'accessToken'   => $accessToken,
             'refreshToken'  => $refreshToken
@@ -333,18 +367,28 @@ class Rest
             $token = $this->getBearerToken();
             
             // let's check if refreshToken is valid
-            JWT::decode($token, API_REFRESH_TOKEN_KEY, [''.API_ALGORITHM.'']);
+            $refreshToken = JWT::decode($token, API_REFRESH_TOKEN_KEY, [''.API_ALGORITHM.'']);
            
+            //print_r($refreshToken);
             $db = new Database();
             $this->database = $db->connect();            
             
             $tokenType = TOKEN_TYPE_REFRESH;
             
-            $sql = $this->database->prepare("SELECT UserId, Token, Issued FROM tokens WHERE Token = :token AND TokenType = :tokentype");
-            $sql->bindParam(":token", $token);
-            $sql->bindParam(":tokentype", $tokenType);
-            $sql->execute();
-            $dbToken = $sql->fetch(PDO::FETCH_ASSOC);
+            try {
+                $sql = $this->database->prepare("SELECT UserId, 
+                                                        Token FROM 
+                                                        tokens WHERE 
+                                                        Token = :token AND 
+                                                        TokenType = :tokentype");
+                $sql->bindParam(":token", $token);
+                $sql->bindParam(":tokentype", $tokenType);
+                $sql->execute();
+                $dbToken = $sql->fetch(PDO::FETCH_ASSOC);
+            } catch (Exception $e) {
+                $this->throwException(DATABASE_ERROR, "Database select error.");
+            }
+            
             //print_r($tokens);
             
             // if there is no any results from db return that there is no matchign refresh token
@@ -353,7 +397,7 @@ class Rest
             }
             
             // Not needed, JWT::decode should throw an exception before this
-            if (($dbToken['Issued'] + AGE_OF_REFRESH_TOKEN) < time()) {
+            if ($refreshToken->exp < time()) {
                 $this->throwException(REFRESH_TOKEN_ERROR, "dsadsa");
             }
             
@@ -372,7 +416,7 @@ class Rest
             
             // if refreshToken is valid. Let's generate new Tokens. Both tokens are always generated, 
             // so it is enough to call generateTokens
-            $this->generateTokens($dbToken['UserId']);
+            $this->generateTokens($dbToken['UserId'], $refreshToken->exp);
             
         } catch (Exception $e) {
             $this->throwException(REFRESH_TOKEN_ERROR, "RefreshToken: ".$e->getMessage());
@@ -390,7 +434,7 @@ class Rest
             
             // Try to get token from header
             $token = $this->getBearerToken();
-            echo("TOKEN: " .$token."\n");
+            //echo("TOKEN: " .$token."\n"); //debug
             $payload = JWT::decode($token, API_ACCESS_TOKEN_KEY, [''.API_ALGORITHM.'']);
             
             //moved SQL connection from __construct(). At least do not make so many connections to database. 
@@ -507,7 +551,7 @@ class Rest
             }
         }
         
-        echo ("Headers: " . $headers ."\n");
+         //echo ("Headers: " . $headers ."\n"); //debug
          return $headers;
     }
     
@@ -524,7 +568,7 @@ class Rest
         if (!empty($headers)) {
             $token = explode(" ", $headers, 2);
             if (!empty($token[1])) {
-                echo ("Token: " . $token[1] ."\n");
+                //echo ("Token: " . $token[1] ."\n"); //debug
                 return $token[1];
             } 
             $this->throwException(COULD_NOT_GET_AUTHORIZATION_FROM_HEADER, 'Could not parse access token from authorization header');    

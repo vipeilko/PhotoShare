@@ -64,7 +64,7 @@ class Api extends Rest
             }
 
             //if everything is ok lets call generator
-            $this->generateTokens($user['Id']);
+            $this->generateTokens($user['Id'], 0);
 
     }
     /**
@@ -74,6 +74,7 @@ class Api extends Rest
     {
         echo ("Authorization ok.");
     }
+    
     
 }
 

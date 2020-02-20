@@ -104,5 +104,6 @@ define('COULD_NOT_GET_AUTHORIZATION_FROM_HEADER',   301);
 define('ACCESS_TOKEN_ERROR',                        302);
 define('REFRESH_TOKEN_ERROR',                       303);
 define('CLASS_NOT_FOUND',                           304);
+define('DATABASE_ERROR',                            305);               
 
 ?>
