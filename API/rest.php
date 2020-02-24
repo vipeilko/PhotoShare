@@ -141,6 +141,29 @@ class Rest
         }
 
         switch ($dataType) {
+            case PASSWORD:
+                // min lenght is defined in settings.php
+                if ( strlen($value) < PASSWORD_MIN_LENGTH ) {
+                    $this->throwException(PASSWORD_NOT_COMPLEX_ENOUGH, "Password too short!");
+                }
+                if ( !preg_match("#[0-9]+#", $value) ) {
+                    $this->throwException(PASSWORD_NOT_COMPLEX_ENOUGH, "Password not meeting complexity requirements!");
+                }
+                if ( !preg_match("#[a-z]+#", $value) ) {
+                    $this->throwException(PASSWORD_NOT_COMPLEX_ENOUGH, "Password not meeting complexity requirements!");
+                }
+                if ( !preg_match("#[A-Z]+#", $value) ) {
+                    $this->throwException(PASSWORD_NOT_COMPLEX_ENOUGH, "Password not meeting complexity requirements!");
+                }
+                if ( !preg_match("#\W+#", $value) ) {
+                    $this->throwException(PASSWORD_NOT_COMPLEX_ENOUGH, "Password not meeting complexity requirements!");
+                }
+                break;
+            case EMAIL:
+                if (!filter_var($value, FILTER_VALIDATE_EMAIL)) {
+                    $this->throwException(VALIDATE_PARAMETER_EMAIL, "Invalid email format for " . $fieldName . "");
+                }
+                break;
             case BOOLEAN:
                 if (is_bool($value)) {
                     $this->throwException(VALIDATE_PARAMETER_REQUIRED, "Datatype is not valid for " . $fieldName . ". It should be boolean.");

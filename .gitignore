@@ -50,3 +50,7 @@ vendor/firebase/php-jwt/src/SignatureInvalidException.php
 API/credentials.php
 API/passwordHash.php
 .settings/org.eclipse.core.resources.prefs
+.settings/org.eclipse.ltk.core.refactoring.prefs
+.settings/org.eclipse.php.composer.core.prefs
+.settings/org.eclipse.wst.validation.prefs
+.settings/org.eclipse.php.ui.prefs

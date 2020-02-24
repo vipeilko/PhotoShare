@@ -1,7 +1,7 @@
 {
 	"serviceName":"generateToken",
 	"param":{
-		"email":"dsadas@juu.fi",
-		"password":"testpassword"
+		"email":"testi@domaini.fi",
+		"password":"M0n1muotoinenTest!SalaKala"
 	}
 }

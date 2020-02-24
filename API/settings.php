@@ -13,17 +13,26 @@ define('AGE_OF_REFRESH_TOKEN', 24*60*60);   // default 86 400 seconds or 1 day
 define('API_ALGORITHM', 'HS256');           // default HS256
 define('TOKEN_TYPE_ACCESS', 1);             // Token type 1 = access and 2 = refresh. This is used in database to keep track on issued tokens
 define('TOKEN_TYPE_REFRESH', 2);            // in early versions we only track refresh tokens
+define('PASSWORD_MIN_LENGTH', 10);          // User password min lenght. Password has to contain At least a small letter, a capital letter, a number and Special character
+define('USER_PASSWORD_ALGORITYM', PASSWORD_ARGON2ID); // defautl PASSWORD_ARGON2ID, other possibilities are PASSWORD_DEFAULT, PASSWORD_BCRYPT and PASSWORD_ARGON2I 
+define('PASSWORD_COST', 10);                // Defines complexity of password calculation. Aim to 50 ms response from generating hash.
 
 
+/*
+ * Other settings
+ */
+
+define('LENGHT_OF_QR_CODE_HASH', 15);
 
 /*
  * Data Type
  *
- * TODO: add email, phonenumber, ect...
  */
 define('BOOLEAN',   '1');
 define('INTEGER',   '2');
 define('STRING',    '3');
+define('EMAIL',     '4');
+define('PASSWORD',  '5');
 
 /**
  * General
@@ -50,6 +59,9 @@ define('INVALID_USER_PASS',             108);
 define('USER_IS_DISABLED',              109);
 define('NO_MATCHING_REFRESH_TOKEN',     110);
 define('TOO_MANY_TOKENS',               111);
+define('VALIDATE_PARAMETER_EMAIL',      112);
+define('PASSWORD_NOT_COMPLEX_ENOUGH',   113);
+
 
 /**
  * TODO: Do we need general place for error messages?
