@@ -54,3 +54,4 @@ API/passwordHash.php
 .settings/org.eclipse.php.composer.core.prefs
 .settings/org.eclipse.wst.validation.prefs
 .settings/org.eclipse.php.ui.prefs
+*.jpg

@@ -21,8 +21,24 @@ define('PASSWORD_COST', 10);                // Defines complexity of password ca
 /*
  * Other settings
  */
-
 define('LENGHT_OF_QR_CODE_HASH', 15);
+define('IMAGE_STORAGE_PATH', '../data/images/');
+
+
+// Images are atomatically resized, here settings which defines maximun width/height, etc...
+define('THUMBNAIL_MAX_WIDTH',           200); // thumbnail max width
+define('THUMBNAIL_MAX_HEIGHT',          200); // thumbnail max height
+define('MEDIUM_IMAGE_MAX_WIDTH',        800); // medium image max width. This is size where QR-codes are tried to read
+define('MEDIUM_IMAGE_MAX_HEIGHT',       800); // medium image max height. This is size where QR-codes are tried to read
+define('FULL_SIZE_IMAGE_MAX_WIDTH',    1920); // full-size image max width
+define('FULL_SIZE_IMAGE_MAX_HEIGHT',   1920); // full-size image max height
+define('JPEG_QUALITY',                   75); // JPEG compression 1 - 100 
+define('KEEP_ORGINAL_PHOTO',           true); // if true keeps orginal photo else deletes it 
+
+const ALLOWED_IMAGE_TYPES = array ('image/jpeg',
+                                   'image/png'
+                                  );
+
 
 /*
  * Data Type
