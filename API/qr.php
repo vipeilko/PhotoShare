@@ -5,7 +5,10 @@
  * 
  * Changelog
  * + 25.02.2020 First appear, includes just few tests (performance) and image resizing
- * + 27.02.2020 Performance test, and generate hash
+ * + 27.02.2020 Performance test, and generate hash (all the times are clocked on extremely slow hardware, less than 1000p in passmark)
+ * + 28.02.2020 Introduction of processImages. 
+ * 
+ * 
  */
 require "../vendor/autoload.php";
 require('settings.php');
@@ -42,7 +45,7 @@ class qr {
             for ( $i = 1; $i <= $numberofhash; $i++ ) {
                 $this->$qrHash[$i] = bin2hex(random_bytes(LENGHT_OF_QR_CODE_HASH));
             }
-        }
+        } else { return false; }
         //print_r($qrHash);       
     }
     /**
@@ -54,7 +57,7 @@ class qr {
      */
     public function isFileImage ($image) 
     {
-        if (!in_array(mime_content_type(IMAGE_STORAGE_PATH . $image), ALLOWED_IMAGE_TYPES) ) {
+        if (!in_array(mime_content_type($image), ALLOWED_IMAGE_TYPES) ) {
             return false;
         }
         return true;
@@ -72,7 +75,7 @@ class qr {
         if ($this->isFileImage($image)) {
             try {
                 //
-                $qrcode = new QrReader(IMAGE_STORAGE_PATH . $image);
+                $qrcode = new QrReader($image);
                 $text = $qrcode->text(); //return decoded text from QR Code
 
             } catch (Exception $e) {
@@ -100,14 +103,14 @@ class qr {
      * 
      * TODO:Cache; if it is already made
      */
-    public function resizeImage($image, $width = MEDIUM_IMAGE_MAX_WIDTH, $height = MEDIUM_IMAGE_MAX_HEIGHT, $quality = JPEG_QUALITY) 
+    public function resizeImage($image, $width = MEDIUM_IMAGE_MAX_WIDTH, $height = MEDIUM_IMAGE_MAX_HEIGHT, $subpath = IMG_SUBPATH_MEDIUM, $quality = JPEG_QUALITY) 
     {
         // check if file is image
         if (!$this->isFileImage($image) ) {
             //TODO: Throw Exception
             die ("kuva ei oikeanlainen");
         }
-        list($imgWidth, $imgHeight) = getimagesize(IMAGE_STORAGE_PATH . $image);
+        list($imgWidth, $imgHeight) = getimagesize($image);
         
         if ($imgWidth > $imgHeight) {
             $newWidth =  $imgWidth / ($imgWidth / $width);
@@ -119,16 +122,81 @@ class qr {
 
         $path = pathinfo($image);
         //print_r($path); // debug
-        $src_img = imagecreatefromjpeg(IMAGE_STORAGE_PATH . $image);
+        $src_img = imagecreatefromjpeg($image);
         $dest_img = imagecreatetruecolor($newWidth, $newHeight);
         imagecopyresampled($dest_img, $src_img, 0, 0, 0, 0, $newWidth, $newHeight, $imgWidth, $imgHeight);
         
-        imagejpeg($dest_img, IMAGE_STORAGE_PATH . $path['filename'] . "_" . $newWidth . "x" . $newHeight . "." . $path['extension'], $quality);
-
-        $time_end = microtime(true);
+        imagejpeg($dest_img, IMAGE_STORAGE_PATH . $subpath . $path['filename'] . "." . $path['extension'], $quality);
 
         
-        return $path['filename'] . "_" . $newWidth . "x" . $newHeight . "." . $path['extension'];
+        return IMAGE_STORAGE_PATH . $subpath . $path['filename'] . "." . $path['extension'];
+    }
+    
+    /**
+     * 
+     */
+    public function processImages()
+    {
+        //get array of images
+        $imgs = glob(IMAGE_STORAGE_PATH . "*.{Jpg,jpg,JPG,png,PNG}", GLOB_BRACE);
+        //print_r($imgs);
+        
+        $numberOfImages = count($imgs);
+        
+        //lets add file modify time to array
+        $temp = array();
+        for ($i = 0; $i < count($imgs); $i++ ) {
+            $name = $imgs[$i];
+            $mtime = filemtime($imgs[$i]);
+            array_push($temp,
+                array (
+                'name'  => $name,
+                'mtime' => $mtime)
+                );
+        } 
+        //sort using cmpImgTime which compares unix timestamps
+        usort($temp, array("qr", "cmpImgTime"));
+        
+        //print_r($temp);
+        //echo "<br>";
+        $imgbelongstocode = null;
+        
+        //before start processing images estimating time to accomplish and +50% 
+        set_time_limit( $numberOfImages * PROCESS_TIME_OF_ONE_IMAGE * 1.5 );
+        echo ("Estimated time to execute is: " . ($numberOfImages * PROCESS_TIME_OF_ONE_IMAGE * 1.5) . " seconds <br>\n");
+        foreach ($temp as $item) {
+            $path = pathinfo($item['name']);
+            print_r ($path); //debug
+            //resizeImage($image, $width = MEDIUM_IMAGE_MAX_WIDTH, $height = MEDIUM_IMAGE_MAX_HEIGHT, $subpath = IMG_SUBPATH_MEDIUM, $quality = JPEG_QUALITY) 
+            $fullSize = $this->resizeImage($path['dirname'] ."/". $path['basename'], FULL_SIZE_IMAGE_MAX_WIDTH, FULL_SIZE_IMAGE_MAX_HEIGHT, IMG_SUBPATH_FULL_SIZE);
+            $mediumSize = $this->resizeImage($fullSize);
+            $thumbnail = $this->resizeImage($mediumSize, THUMBNAIL_MAX_WIDTH, THUMBNAIL_MAX_HEIGHT, IMG_SUBPATH_THUMBNAIL);
+            
+            $qrText = $this->readQrCodeFromImage($mediumSize);
+            if ( $qrText ) {
+                $imgbelongstocode = $qrText;
+            }
+            echo ("Image belongs to qr-code : " . $imgbelongstocode . "<br> \n"); //debug
+            
+            //TODO: add image to database and compare if it is even qr-code from this system, if not delete all sizes of image and original
+            
+            // if KEEP_ORIGINAL_PHOTO is true let's move it to original folder, otherwise delete it
+            if ( KEEP_ORIGINAL_PHOTO ) {
+                rename ($path['dirname'] ."/". $path['basename'], $path['dirname'] . "/" . IMG_SUBPATH_ORIGINAL . $path['basename']);
+            } else {
+                unlink ( $path['dirname'] ."/". $path['basename'] );
+            }
+            
+            //TODO: return 201 ok so client knows to ask processing new images again
+            
+        }
+    }
+    
+    function cmpImgTime($element1, $element2) 
+    {
+        $time1 = $element1['mtime'];
+        $time2 = $element2['mtime'];
+        return $time1 <=> $time2;
     }
     
     /**
@@ -170,14 +238,18 @@ class qr {
         $execution_time = ($time_end - $time_start);
         echo 'Total Execution Time: '.$execution_time.' seconds<br>';
     }
+
     
 }
-
+$time_start = microtime(true);
 $koodit = new qr();
 //$koodit->performanceTest();
 //echo ($koodit->qrText);
-$koodit->generateHash();
-print_r($koodit->$qrHash);
+//$koodit->generateHash();
+//print_r($koodit->$qrHash);
 
-
+$koodit->processImages();
+$time_end = microtime(true);
+$execution_time = ($time_end - $time_start);
+echo 'Total Execution Time: '.$execution_time.' seconds<br>';
 ?>
