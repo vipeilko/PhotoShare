@@ -12,6 +12,7 @@
  */
 require "../vendor/autoload.php";
 require('settings.php');
+require('database.php');
 
 use Zxing\QrReader;
 
@@ -20,7 +21,7 @@ use Zxing\QrReader;
 class qr {
     
     public $database;
-    protected array $qrHash;
+    protected array $qrHash; // not needed if used db queries instead
     public array $qrCodes;
     public $qrText;
     
@@ -37,17 +38,71 @@ class qr {
     /**
      * 
      * @param number $numberofhash
+     * @param number $fatherId
+     * @return boolean
      */
-    public function generateHash($numberofhash = 10) 
+    public function generateHash($numberofhash = 10, $fatherId = 0) 
     {
         global $qrHash;
+        // let's generate hash
         if (is_numeric($numberofhash) ) {
             for ( $i = 1; $i <= $numberofhash; $i++ ) {
                 $this->$qrHash[$i] = bin2hex(random_bytes(LENGHT_OF_QR_CODE_HASH));
             }
-        } else { return false; }
+        } else { 
+            return false; 
+        }
         //print_r($qrHash);       
+
+        try {
+            $db = new Database();
+            $this->database = $db->connect();
+            
+            $sql = ("INSERT INTO hash(FatherId,
+                                        Hash,
+                                        Type,
+                                        Disabled,
+                                        OwnerId,
+                                        CreatedOn,
+                                        ModDate) 
+                                VALUES (:FatherId,
+                                        :Hash,
+                                        :Type,
+                                        :Disabled,
+                                        :OwnerId,
+                                        :CreatedOn, 
+                                        :ModDate)");
+            $stmt = $this->database->prepare($sql);
+            
+            $date = new DateTime();
+            $createdOn = $date->format('Y-m-d H:i:s');
+            $modDate = $createdOn;
+            $hashType = 0;
+            $disabled = 0;
+            //TODO: When integrating with api getUserid from db
+            $ownerId = 2;
+            
+            for ( $i = 1; $i <= count($this->$qrHash); $i++ ) {
+    
+                $stmt->bindParam(':FatherId',   $fatherId,          PDO::PARAM_STR);
+                $stmt->bindParam(':Hash',       $this->$qrHash[$i], PDO::PARAM_STR);
+                $stmt->bindParam(':Type',       $hashType,          PDO::PARAM_STR);
+                $stmt->bindParam(':Disabled',   $disabled,          PDO::PARAM_STR);
+                $stmt->bindParam(':OwnerId',    $ownerId,           PDO::PARAM_STR);
+                $stmt->bindParam(':CreatedOn',  $createdOn,         PDO::PARAM_STR);
+                $stmt->bindParam(':ModDate',    $modDate,           PDO::PARAM_STR);
+                
+                $stmt->execute();
+            }
+            
+        } catch (Exception $e) {
+            //TODO: uncomment when integratin with API
+            //$this->throwException(DATABASE_ERROR, "Database insert error.");
+        }
+        
+        return true;
     }
+    
     /**
      * 
      * @param unknown $image
@@ -132,6 +187,11 @@ class qr {
         return IMAGE_STORAGE_PATH . $subpath . $path['filename'] . "." . $path['extension'];
     }
     
+    public function insertImageToDb() 
+    {
+        
+    }
+    
     /**
      * 
      */
@@ -159,11 +219,17 @@ class qr {
         
         //print_r($temp);
         //echo "<br>";
+        
+        //Stores last QRCode
         $imgbelongstocode = null;
+        $imghashid = null;
         
         //before start processing images estimating time to accomplish and +50% 
         set_time_limit( $numberOfImages * PROCESS_TIME_OF_ONE_IMAGE * 1.5 );
-        echo ("Estimated time to execute is: " . ($numberOfImages * PROCESS_TIME_OF_ONE_IMAGE * 1.5) . " seconds <br>\n");
+        echo ("Estimated time to execute is: " . ($numberOfImages * PROCESS_TIME_OF_ONE_IMAGE * 1.5) . " seconds <br>\n"); //debug
+        $db = new Database();
+        $this->database = $db->connect();
+        // Start processing
         foreach ($temp as $item) {
             $path = pathinfo($item['name']);
             print_r ($path); //debug
@@ -173,23 +239,88 @@ class qr {
             $thumbnail = $this->resizeImage($mediumSize, THUMBNAIL_MAX_WIDTH, THUMBNAIL_MAX_HEIGHT, IMG_SUBPATH_THUMBNAIL);
             
             $qrText = $this->readQrCodeFromImage($mediumSize);
+            
+            // collect hash from captured URL
+            echo ("QRTEXT: " . $qrText. "\n");
+            preg_match('/(?<=\/album\/)[a-zA-Z0-9]{1,50}/', $qrText, $matches);
+            //print_r($matches);
+                //if problems with regular expression use this simple explode
+                //$parsedHash = explode('/album/', $qrText);
+                //$matches = $parsedHash[1];
+
+            // if qr code was able to read from image
             if ( $qrText ) {
-                $imgbelongstocode = $qrText;
+                //query db to see if hash matches
+                try {
+                    $sql = ("SELECT Id, FatherId, Hash FROM hash
+                                                   WHERE Hash = :Hash");
+                    
+                    $stmt = $this->database->prepare($sql);
+                    $stmt->bindParam(':Hash',   $matches[0],          PDO::PARAM_STR);
+                    
+                    $stmt->execute();
+                    $dbHash = $stmt->fetch(PDO::FETCH_ASSOC);
+                    
+                    if (! is_array($dbHash)) {
+                        // TODO: uncomment when integrating with API throwException or warning
+                        die("This QR-code doesn't exists our database.");
+                        //$this->throwException(QR_CODE_DO_NOT_EXIST, "This QR-code doesn't exists our database.");
+                    }
+                    
+                    //store last qr code
+                    $imgbelongstocode = $dbHash['Hash'];
+                    $imghashid = $dbHash['Id'];
+                    //echo ("Image belongs to qr-code : " . $imgbelongstocode . "<br> \n"); //debug
+                    $this->database = null;
+                } catch (Exception $e) {
+                    die("DB ERROR: " . $e->getMessage());
+                    //TODO: uncomment when integrating with API
+                    //$this->throwException(DATABASE_ERROR, "Database select error.");
+                }
+                
             }
-            echo ("Image belongs to qr-code : " . $imgbelongstocode . "<br> \n"); //debug
+            //TODO: add image to database
+            try {
+                $sql = ("INSERT INTO images(HashId,
+                                        NameOnDisk,
+                                        Deleted,
+                                        CreatedOn)
+                                VALUES (:HashId,
+                                        :NameOnDisk,
+                                        :Deleted,
+                                        :CreatedOn)");
+                $stmt = $this->database->prepare($sql);
+                
+                $date = new DateTime();
+                $createdOn = $date->format('Y-m-d H:i:s');;
+                $deleted = 0;
+                    
+                $stmt->bindParam(':HashId',     $imghashid,         PDO::PARAM_STR);
+                $stmt->bindParam(':NameOnDisk', $path['basename'],  PDO::PARAM_STR);
+                $stmt->bindParam(':Deleted',    $deleted,           PDO::PARAM_STR);
+                $stmt->bindParam(':CreatedOn',  $createdOn,         PDO::PARAM_STR);
+                
+                $stmt->execute();
+                
+                
+            } catch (Exception $e) {
+                //TODO: uncomment when integratin with API
+                //$this->throwException(DATABASE_ERROR, "Database insert error.");
+            }
             
-            //TODO: add image to database and compare if it is even qr-code from this system, if not delete all sizes of image and original
-            
-            // if KEEP_ORIGINAL_PHOTO is true let's move it to original folder, otherwise delete it
+            // if KEEP_ORIGINAL_PHOTO is true let's move it to IMG_SUBPATH_ORIGINAL folder, otherwise delete it
             if ( KEEP_ORIGINAL_PHOTO ) {
                 rename ($path['dirname'] ."/". $path['basename'], $path['dirname'] . "/" . IMG_SUBPATH_ORIGINAL . $path['basename']);
             } else {
                 unlink ( $path['dirname'] ."/". $path['basename'] );
             }
-            
+        
             //TODO: return 201 ok so client knows to ask processing new images again
             
-        }
+        } // END processing / end foreach
+        
+        //TODO: Save to db information from last used HasId and/or hash 
+        
     }
     
     function cmpImgTime($element1, $element2) 
@@ -241,6 +372,7 @@ class qr {
 
     
 }
+
 $time_start = microtime(true);
 $koodit = new qr();
 //$koodit->performanceTest();
@@ -252,4 +384,7 @@ $koodit->processImages();
 $time_end = microtime(true);
 $execution_time = ($time_end - $time_start);
 echo 'Total Execution Time: '.$execution_time.' seconds<br>';
+
+
+
 ?>

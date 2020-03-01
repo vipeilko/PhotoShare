@@ -23,7 +23,7 @@ define('PASSWORD_COST', 10);                // Defines complexity of password ca
  */
 define('PROCESS_TIME_OF_ONE_IMAGE',             5); // Processing time of one image. From original to full-size, medium and thumbnail. Default 5
                                                     // You should run run performanceTest() in qr.php to see how long time is needed to resize and read codes
-define('LENGHT_OF_QR_CODE_HASH',               15); // Defines how many character is used in qr code hash. Default 15
+define('LENGHT_OF_QR_CODE_HASH',               15); // Defines how many character is used in qr code hash. Default 15. Max 50.
 define('IMAGE_STORAGE_PATH',    '../data/images/'); // main image path
 define('IMG_SUBPATH_ORIGINAL',        'original/'); // sub folder to store original photos. Only needed if KEEP_ORIGINAL_PHOTO is true
 define('IMG_SUBPATH_FULL_SIZE',      'full-size/'); // sub folder to store full-size photos.
@@ -84,6 +84,7 @@ define('NO_MATCHING_REFRESH_TOKEN',     110);
 define('TOO_MANY_TOKENS',               111);
 define('VALIDATE_PARAMETER_EMAIL',      112);
 define('PASSWORD_NOT_COMPLEX_ENOUGH',   113);
+define('QR_CODE_DO_NOT_EXIST',          114);
 
 
 /**

@@ -43,6 +43,12 @@ class Database
             echo ("Database Error: " . $e->getMessage());
         }
     }
+    
+    public function disconnect() 
+    {
+        
+    }
+    
 }
 
 // $db = new Database;
