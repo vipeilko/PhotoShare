@@ -23,13 +23,13 @@ define('PASSWORD_COST', 10);                // Defines complexity of password ca
  */
 define('PROCESS_TIME_OF_ONE_IMAGE',             5); // Processing time of one image. From original to full-size, medium and thumbnail. Default 5
                                                     // You should run run performanceTest() in qr.php to see how long time is needed to resize and read codes
-define('LENGHT_OF_QR_CODE_HASH',               15); // Defines how many character is used in qr code hash. Default 15. Max 50.
+define('LENGHT_OF_QR_CODE_HASH',                8); // Defines how many character is used in qr code hash. Default 8. Max 50. HASH is generated in bytes so length is estimated
 define('IMAGE_STORAGE_PATH',    '../data/images/'); // main image path
 define('IMG_SUBPATH_ORIGINAL',        'original/'); // sub folder to store original photos. Only needed if KEEP_ORIGINAL_PHOTO is true
 define('IMG_SUBPATH_FULL_SIZE',      'full-size/'); // sub folder to store full-size photos.
 define('IMG_SUBPATH_MEDIUM',            'medium/'); // sub folder to store medium photos.
 define('IMG_SUBPATH_THUMBNAIL',      'thumbnail/'); // sub folder to store thumbnail photos.
-define('QR_CODE_URL_PREFIX', 'https://<your server here>/PhotoShare/album/'); // 
+define('QR_CODE_URL_PREFIX', 'https://<your server here>/PhotoShare/album/'); // path must include /album/
 
 
 // Images are atomatically resized, here settings which defines maximun width/height, etc...
@@ -40,7 +40,8 @@ define('MEDIUM_IMAGE_MAX_HEIGHT',       800); // medium image max height. This i
 define('FULL_SIZE_IMAGE_MAX_WIDTH',    1920); // full-size image max width
 define('FULL_SIZE_IMAGE_MAX_HEIGHT',   1920); // full-size image max height
 define('JPEG_QUALITY',                   75); // JPEG compression 1 - 100 
-define('KEEP_ORIGINAL_PHOTO',          true); // if true keeps orginal photo else deletes it 
+define('KEEP_ORIGINAL_PHOTO',          true); // if true keeps orginal photo else deletes it
+define('ADD_WATERMARK_TO_PHOTO',      false); // not implemented yet
 
 const ALLOWED_IMAGE_TYPES = array ('image/jpeg',
                                    'image/png'

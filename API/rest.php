@@ -237,7 +237,7 @@ class Rest
         
         //TODO: COMBINE THESE TWO UPDATES TO ONE FUNCTION 
         
-        echo 'Database connection status after query: ' . $this->database->getAttribute(PDO::ATTR_CONNECTION_STATUS) ."\n"; // For debugg
+        //echo 'Database connection status after query: ' . $this->database->getAttribute(PDO::ATTR_CONNECTION_STATUS) ."\n"; // For debugg
         // DB UPDATE OF ACCESSTOKEN STARTS FROM HERE
         $tokenType = TOKEN_TYPE_ACCESS;
         $sql = null;
@@ -373,6 +373,9 @@ class Rest
             'refreshToken'  => $refreshToken
         ];
         
+        //close db connection
+        $this->database->disconnect();
+        
         $this->response(SUCCESS_RESPONSE, $data);
     }
     
@@ -442,6 +445,8 @@ class Rest
             $this->generateTokens($dbToken['UserId'], $refreshToken->exp);
             
         } catch (Exception $e) {
+            //close db connection
+            $this->database->disconnect();
             $this->throwException(REFRESH_TOKEN_ERROR, "RefreshToken: ".$e->getMessage());
         }
     }
@@ -479,8 +484,12 @@ class Rest
             $this->userId = $payload->userId;
             
         } catch (Exception $e) {
+            //close db connection
+            $this->database->disconnect();
             $this->throwException(ACCESS_TOKEN_ERROR, "AccessToken: ".$e->getMessage());
         }
+        //close db connection
+        $this->database->disconnect();
         
     }
     

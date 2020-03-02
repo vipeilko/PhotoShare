@@ -19,6 +19,7 @@ class Database
     private $databasename = null;
     private $user = null;
     private $password = null;
+    private $dbconnection = null;
     
     public function __construct () 
     {
@@ -33,12 +34,12 @@ class Database
     public function connect()
     {
         try {
-            $dbconnection = new PDO('mysql:host=' . $this->server . ';dbname=' . $this->databasename, $this->user, $this->password);
-            $dbconnection->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            $this->dbconnection = new PDO('mysql:host=' . $this->server . ';dbname=' . $this->databasename, $this->user, $this->password);
+            $this->dbconnection->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
             // For debuggin
             //echo 'Database connection status: ' . $dbconnection->getAttribute(PDO::ATTR_CONNECTION_STATUS) ."\n"; //debug
-            return $dbconnection;
+            return $this->dbconnection;
         } catch (Exception $e) {
             echo ("Database Error: " . $e->getMessage());
         }
@@ -46,7 +47,7 @@ class Database
     
     public function disconnect() 
     {
-        
+        $this->dbconnection = null;
     }
     
 }

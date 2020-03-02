@@ -36,6 +36,7 @@ class qr {
         
     }
     /**
+     * generatehash
      * 
      * @param number $numberofhash
      * @param number $fatherId
@@ -47,7 +48,7 @@ class qr {
         // let's generate hash
         if (is_numeric($numberofhash) ) {
             for ( $i = 1; $i <= $numberofhash; $i++ ) {
-                $this->$qrHash[$i] = bin2hex(random_bytes(LENGHT_OF_QR_CODE_HASH));
+                $this->$qrHash[$i] = strtoupper(bin2hex(random_bytes(LENGHT_OF_QR_CODE_HASH/2)));
             }
         } else { 
             return false; 
@@ -181,8 +182,12 @@ class qr {
         $dest_img = imagecreatetruecolor($newWidth, $newHeight);
         imagecopyresampled($dest_img, $src_img, 0, 0, 0, 0, $newWidth, $newHeight, $imgWidth, $imgHeight);
         
+        if (ADD_WATERMARK_TO_PHOTO) {
+            //TODO: Add optional watermark to photo
+        }
+        
         imagejpeg($dest_img, IMAGE_STORAGE_PATH . $subpath . $path['filename'] . "." . $path['extension'], $quality);
-
+        
         
         return IMAGE_STORAGE_PATH . $subpath . $path['filename'] . "." . $path['extension'];
     }
@@ -271,14 +276,17 @@ class qr {
                     $imgbelongstocode = $dbHash['Hash'];
                     $imghashid = $dbHash['Id'];
                     //echo ("Image belongs to qr-code : " . $imgbelongstocode . "<br> \n"); //debug
-                    $this->database = null;
                 } catch (Exception $e) {
                     die("DB ERROR: " . $e->getMessage());
                     //TODO: uncomment when integrating with API
                     //$this->throwException(DATABASE_ERROR, "Database select error.");
-                }
-                
+                }   
             }
+            //we have to rename image, include hash in picture
+            rename($fullSize,       IMAGE_STORAGE_PATH .    IMG_SUBPATH_FULL_SIZE . $imgbelongstocode . "_" . $path['basename']);
+            rename($mediumSize,     IMAGE_STORAGE_PATH .    IMG_SUBPATH_MEDIUM .    $imgbelongstocode . "_" . $path['basename']);
+            rename($thumbnail,      IMAGE_STORAGE_PATH .    IMG_SUBPATH_THUMBNAIL . $imgbelongstocode . "_" . $path['basename']);
+            
             //TODO: add image to database
             try {
                 $sql = ("INSERT INTO images(HashId,
@@ -294,9 +302,10 @@ class qr {
                 $date = new DateTime();
                 $createdOn = $date->format('Y-m-d H:i:s');;
                 $deleted = 0;
+                $nameondisk = $imgbelongstocode . "_" . $path['basename'];
                     
                 $stmt->bindParam(':HashId',     $imghashid,         PDO::PARAM_STR);
-                $stmt->bindParam(':NameOnDisk', $path['basename'],  PDO::PARAM_STR);
+                $stmt->bindParam(':NameOnDisk', $nameondisk,        PDO::PARAM_STR);
                 $stmt->bindParam(':Deleted',    $deleted,           PDO::PARAM_STR);
                 $stmt->bindParam(':CreatedOn',  $createdOn,         PDO::PARAM_STR);
                 
@@ -311,6 +320,8 @@ class qr {
             // if KEEP_ORIGINAL_PHOTO is true let's move it to IMG_SUBPATH_ORIGINAL folder, otherwise delete it
             if ( KEEP_ORIGINAL_PHOTO ) {
                 rename ($path['dirname'] ."/". $path['basename'], $path['dirname'] . "/" . IMG_SUBPATH_ORIGINAL . $path['basename']);
+                //TODO: comment above and uncomment below when in production to enable orginal photo. Easier way to test when using above.
+                //rename ($path['dirname'] ."/". $path['basename'], $path['dirname'] . "/" . IMG_SUBPATH_ORIGINAL . $imgbelongstocode . "_" . $path['basename']);
             } else {
                 unlink ( $path['dirname'] ."/". $path['basename'] );
             }
@@ -319,6 +330,7 @@ class qr {
             
         } // END processing / end foreach
         
+        $db->disconnect();
         //TODO: Save to db information from last used HasId and/or hash 
         
     }
@@ -379,6 +391,7 @@ $koodit = new qr();
 //echo ($koodit->qrText);
 //$koodit->generateHash();
 //print_r($koodit->$qrHash);
+
 
 $koodit->processImages();
 $time_end = microtime(true);
