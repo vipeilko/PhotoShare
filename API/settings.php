@@ -29,7 +29,10 @@ define('IMG_SUBPATH_ORIGINAL',        'original/'); // sub folder to store origi
 define('IMG_SUBPATH_FULL_SIZE',      'full-size/'); // sub folder to store full-size photos.
 define('IMG_SUBPATH_MEDIUM',            'medium/'); // sub folder to store medium photos.
 define('IMG_SUBPATH_THUMBNAIL',      'thumbnail/'); // sub folder to store thumbnail photos.
+define('QR_CODE_IMAGE_PATH',                'qr/');     
 define('QR_CODE_URL_PREFIX', 'https://<your server here>/PhotoShare/album/'); // path must include /album/
+define('QR_CODE_DEFAULT_SIZE',                200); 
+define('QR_CODE_GENERATE_WITHOUT_PATH',      true); //default false
 
 
 // Images are atomatically resized, here settings which defines maximun width/height, etc...

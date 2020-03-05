@@ -7,7 +7,7 @@
  * + 25.02.2020 First appear, includes just few tests (performance) and image resizing
  * + 27.02.2020 Performance test, and generate hash (all the times are clocked on extremely slow hardware, less than 1000p in passmark)
  * + 28.02.2020 Introduction of processImages. 
- * 
+ * + 05.03.2020 Generating qr-code images png
  * 
  */
 require "../vendor/autoload.php";
@@ -15,6 +15,9 @@ require('settings.php');
 require('database.php');
 
 use Zxing\QrReader;
+use Endroid\QrCode\QrCode;
+use Endroid\QrCode\ErrorCorrectionLevel;
+
 
 //TODO: extends api
 
@@ -31,18 +34,14 @@ class qr {
         
     }
     
-    public function generateQrCodes() 
-    {
-        
-    }
     /**
-     * generatehash
+     * generateQrCodes
      * 
      * @param number $numberofhash
      * @param number $fatherId
      * @return boolean
      */
-    public function generateHash($numberofhash = 10, $fatherId = 0) 
+    public function generateQrCodes($numberofhash = 10, $fatherId = 0, $qrCodeSize = QR_CODE_DEFAULT_SIZE) 
     {
         global $qrHash;
         // let's generate hash
@@ -54,7 +53,8 @@ class qr {
             return false; 
         }
         //print_r($qrHash);       
-
+        
+        // insert into db
         try {
             $db = new Database();
             $this->database = $db->connect();
@@ -83,6 +83,7 @@ class qr {
             //TODO: When integrating with api getUserid from db
             $ownerId = 2;
             
+            //add each hash to db
             for ( $i = 1; $i <= count($this->$qrHash); $i++ ) {
     
                 $stmt->bindParam(':FatherId',   $fatherId,          PDO::PARAM_STR);
@@ -99,6 +100,25 @@ class qr {
         } catch (Exception $e) {
             //TODO: uncomment when integratin with API
             //$this->throwException(DATABASE_ERROR, "Database insert error.");
+        }
+        
+        //generate qr-images. This is pretty fast, less than 1.2 sec for 20 qr-images
+        for ( $i = 1; $i <= count($this->$qrHash); $i++ ) {
+            //generate QR code with prefix URL
+            $qrCode = new QrCode(QR_CODE_URL_PREFIX . $this->$qrHash[$i]);
+            $qrCode->setSize($qrCodeSize);
+            $qrCode->setWriterByName('png');
+            $qrCode->setMargin('10');
+            $qrCode->setEncoding('UTF-8');
+            $qrCode->setErrorCorrectionLevel(ErrorCorrectionLevel::HIGH());
+            $qrCode->writeFile(IMAGE_STORAGE_PATH . QR_CODE_IMAGE_PATH . $this->$qrHash[$i].'_url.png');
+            
+            // generates code just with hash if it is also required 
+            if (QR_CODE_GENERATE_WITHOUT_PATH) {
+                $qrCode->setText($this->$qrHash[$i]);
+                $qrCode->writeFile(IMAGE_STORAGE_PATH . QR_CODE_IMAGE_PATH . $this->$qrHash[$i].'.png');
+            }
+            
         }
         
         return true;
@@ -127,7 +147,8 @@ class qr {
      * 
      * Execution time with 800x800 image is around 1.35 seconds
      */
-    public function readQrCodeFromImage($image) {
+    public function readQrCodeFromImage($image) 
+    {
         if ($this->isFileImage($image)) {
             try {
                 //
@@ -194,7 +215,7 @@ class qr {
     
     public function insertImageToDb() 
     {
-        
+        // this is donw in processImages
     }
     
     /**
@@ -389,11 +410,13 @@ $time_start = microtime(true);
 $koodit = new qr();
 //$koodit->performanceTest();
 //echo ($koodit->qrText);
-//$koodit->generateHash();
-//print_r($koodit->$qrHash);
+$koodit->generateQrCodes();
+print_r($koodit->$qrHash);
 
-
+/*
 $koodit->processImages();
+*/
+
 $time_end = microtime(true);
 $execution_time = ($time_end - $time_start);
 echo 'Total Execution Time: '.$execution_time.' seconds<br>';
