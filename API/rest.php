@@ -83,7 +83,8 @@ class Rest
         }
         // decode json data
         $data = json_decode($this->request, true);
-
+        //print_r($data);
+        
         // if post serviceName is not set or empty throws exception 
         if (!isset($data['serviceName']) or $data['serviceName'] == "") {
             $this->throwException(API_NAME_REQUIRED, "API name required.");
@@ -374,7 +375,7 @@ class Rest
         ];
         
         //close db connection
-        $this->database->disconnect();
+       // $this->database->disconnect();
         
         $this->response(SUCCESS_RESPONSE, $data);
     }
@@ -550,7 +551,7 @@ class Rest
     {
         header("content-type: application/json");
         $response = json_encode([
-            'response' => [
+            'warning' => [
                 'status' => $code,
                 'message' => $data
             ]

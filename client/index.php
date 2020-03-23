@@ -12,6 +12,7 @@
     <link href="https://fonts.googleapis.com/css?family=Arvo&display=swap" rel="stylesheet">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
     <script src="js/transition.js"></script>
+    <script src="js/client.js"></script>
 </head>
 
 <body>
@@ -34,13 +35,13 @@
     	</div>
     	<div class="subitem username form-group">
     		<span class="left">USERNAME</span>
-        	<input class="form-field" placeholder="username" maxlength="20" type="text" id="username" name="username"><br>
+        	<input class="form-field" placeholder="username" maxlength="20" type="text" id="textusername" name="username"><br>
     	</div>
     	<div class="subitem password form-group">
         	<span class="left">PASSWORD</span>
-        	<input class="form-field" placeholder="password" maxlength="50" type="password" id="username" name="username"><br>
+        	<input class="form-field" placeholder="password" maxlength="50" type="password" id="textpassword" name="username"><br>
     	</div>
-    	<div class="subitem submit form-group">
+    	<div class="subitem submit loginsubmit form-group">
         	<input class="form-field" type="submit" value="Login" id="login" name="login"><br>
     	</div>
 	</div>
@@ -54,8 +55,8 @@
 	<div class="item item9"></div>
 	<div class="item item10"></div>
 	<div class="item item11">
-		<div class="subitem item12">login</div>
-		<div class="subitem item13">code</div>
+		<div class="subitem item12 tologinbutton">login</div>
+		<div class="subitem item13 tocodebutton">code</div>
 
 	</div>
 	

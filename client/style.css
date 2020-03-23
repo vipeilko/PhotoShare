@@ -15,6 +15,12 @@ body {
 	height: 100vh;
 }
 
+.code {
+	display: none; 
+}
+.username, .password, .submit, .item13 {
+
+}
 .item {
    /*border: 1px dashed #000000;*/ /* good for debug */
 }
@@ -26,7 +32,7 @@ body {
 }
 
 .item5 {
-	justify-self: center; 
+	justify-self: center;
 }
 
 .item6 {
