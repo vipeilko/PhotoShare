@@ -30,9 +30,15 @@ body {
 	margin-top: 5%;
 	justify-content:center;
 }
+.item4 {
+	
+}
 
 .item5 {
 	justify-self: center;
+}
+.error {
+	border: 3px solid #980000 !important;	
 }
 
 .item6 {
@@ -48,6 +54,7 @@ body {
 	display: flex;
 	width: 420px;
 	color: grey;
+	border-color: #ccc;
 	border: 1px solid grey;
 	border-radius: 6px 6px 6px 6px;
 	margin-top: 10px;
@@ -91,7 +98,9 @@ body {
 .username input, .password input {
 	letter-spacing: 0.6em;
 }
-
+#textusername {
+	
+}
 .item7 input {
 	padding: 5px;
 }

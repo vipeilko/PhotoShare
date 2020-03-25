@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css?family=Arvo&display=swap" rel="stylesheet">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+	<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
     <script src="js/transition.js"></script>
     <script src="js/client.js"></script>
 </head>
@@ -44,19 +45,20 @@
     	<div class="subitem submit loginsubmit form-group">
         	<input class="form-field" type="submit" value="Login" id="login" name="login"><br>
     	</div>
+
 	</div>
 	
 	
 	
 	
-	<div class="item item8"></div>
+	<div class="item item8"><a href="#">testilinkki</a></div>
 
 	<!-- bottom row -->
 	<div class="item item9"></div>
 	<div class="item item10"></div>
 	<div class="item item11">
-		<div class="subitem item12 tologinbutton">login</div>
-		<div class="subitem item13 tocodebutton">code</div>
+		<div class="subitem item12 tologinbutton"><a href="#">login</a></div>
+		<div class="subitem item13 tocodebutton"><a href="#">code</a></div>
 
 	</div>
 	

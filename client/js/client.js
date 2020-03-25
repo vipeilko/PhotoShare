@@ -4,18 +4,41 @@
  * @author vipeilko
  * 
  * + 23.3.2020 Introduction to handle login information and get response from API
- * 
+ * + 25.3.2020 Update response handling from api and redirecting when login succesfull. 
+ * 			   Also changes links login->admin page & logout when tokens is stored.
  * 
  */
 
+//SETTINGS
+// API URL
 const apiUrl = 'http://192.168.1.4/PhotoShare/API/';
+
+//END SETTINGS
+
 document.addEventListener('DOMContentLoaded', () =>  {
+	console.log(sessionStorage.getItem('accessToken')); // debug
+	console.log(sessionStorage.getItem('refreshToken')); // debug
+
+	//if tokens is already issued display a bit different links
+	if ( sessionStorage.getItem('accessToken') != null && sessionStorage.getItem('refreshToken') != null ) {
+		$(".tologinbutton").html('<a href="admin/">admin page</a><br><a href="#logout">logout</a>');
+	}
 	
-	//TODO: which way is better and more readable?
-	//$("#login").addEventListener('click', doLogin);
-	document.getElementById('login').addEventListener('click', doLogin);
+	//if #login form button is available add listener for doLogin
+	if ($("#login").length) {
+		$("#login").bind('click', doLogin);		
+	}
+
 }); //end of DOMContentLoaded
 
+
+/**
+ * doLogin 
+ * 
+ * 
+ * POSTs ajax login request to api and handles feedback
+ * 
+ */
 function doLogin(ev) {
 	let username = $('#textusername').val();
 	let password = $('#textpassword').val();
@@ -34,9 +57,7 @@ function doLogin(ev) {
 		    "serviceName": "generateToken",
 		    "param": {
 		        "email": "testi@domaini.fi",
-		        "password": "M0n1muotoinenTest!SalaKala",
-		        "parametri": "juu",
-		        "toinen_parametri": "joo"
+		        "password": "M0n1muotoinenTest!SalaKala"
 		    }	
 	};
 	
@@ -56,8 +77,7 @@ function doLogin(ev) {
 			
 			if (data.hasOwnProperty('response')) {
 				code = data.response.status;
-			}
-			else if (data.hasOwnProperty('error')) {
+			} else if (data.hasOwnProperty('error')) {
 				code = data.error.status;
 			} else if (data.hasOwnProperty('warning')) {
 				code = data.warning.status;
@@ -65,19 +85,47 @@ function doLogin(ev) {
 				//there is no understandable reply
 			}
 			
+			//console.log(code);
+			
 			//lets read response
 			switch (code) {
 				case 200:
 					//if login credentials are ok and response 200, lets store given tokens
 					if (data.response.message.accessToken && data.response.message.refreshToken) {
+						//TODO:how to keep sessions alive when opening new tab in browser?
 						sessionStorage.setItem('accessToken', data.response.message.accessToken);
 						sessionStorage.setItem('refreshToken', data.response.message.refreshToken);
+						//redirect to admin page
+						window.location.replace('admin/index.php');
 					} else {
 						//not recieving access and refrestokens
 					}
 					break;
+
+					//field is empty but mandatory
 				case 103:
-					//datatype not valid (display just message for few secs and then hide)
+					//username error
+				case 112:
+					//password error
+				case 113:
+					//highlight all empty fields for few seconds
+					 $( "input" ).each( function(){
+						let value = $(this).val();
+						//console.log(this.id);
+						if ( value.length == 0 || this.id == "textusername" && code == 112 || this.id == "textpassword" && code == 113) {
+							let originalColor = $(this).css("background-color");
+							//console.log(originalColor);
+							$(this).animate({'backgroundColor': "#e49b9b"}, 1000, function() {
+								$(this).animate({'backgroundColor': originalColor }, 1000);
+							});
+						}
+					 });
+					 
+					break;
+					
+					//login failed incorrect password or email; shakes login button
+				case 108:
+					$(".loginsubmit").effect("shake");
 					break;
 					
 				default:
@@ -86,15 +134,7 @@ function doLogin(ev) {
 				
 			}
 			
-			
-
-			/*for ( x in data ) {
-				console.log(data[x]);
-			}*/
 		}
-		/*headers: {
-			
-		}*/
-		
-	})
-}
+
+	}) //end ajax
+} //end doLogin
