@@ -1,8 +1,5 @@
 <?php
 
-
-
-
 ?>
 <!DOCTYPE html>
 <html>
@@ -48,10 +45,7 @@
 
 	</div>
 	
-	
-	
-	
-	<div class="item item8"><a href="#">testilinkki</a></div>
+	<div class="item item8"></div>
 
 	<!-- bottom row -->
 	<div class="item item9"></div>
@@ -59,7 +53,8 @@
 	<div class="item item11">
 		<div class="subitem item12 tologinbutton"><a href="#">login</a></div>
 		<div class="subitem item13 tocodebutton"><a href="#">code</a></div>
-
+		<div class="subitem item14 toadminpage"><a href="admin/">admin page</a></div><br>
+		<div class="subitem item15 logout"><a id="logout" href="#logout">logout</a></div>
 	</div>
 	
 </div><!-- end of container -->

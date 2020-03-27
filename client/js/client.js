@@ -3,15 +3,17 @@
  * 
  * @author vipeilko
  * 
- * + 23.3.2020 Introduction to handle login information and get response from API
- * + 25.3.2020 Update response handling from api and redirecting when login succesfull. 
+ * 23.3.2020 Introduction to handle login information and get response from API
+ * 25.3.2020 Update response handling from api and redirecting when login succesfull. 
  * 			   Also changes links login->admin page & logout when tokens is stored.
+ * 27.3.2020 Updated more useful post function
  * 
  */
 
 //SETTINGS
 // API URL
-const apiUrl = 'http://192.168.1.4/PhotoShare/API/';
+const apiUrl = 'http://192.168.1.4/PhotoShare/API/';	// Application program interface url
+var code = null; 										// Stores latest response code from API
 
 //END SETTINGS
 
@@ -21,60 +23,110 @@ document.addEventListener('DOMContentLoaded', () =>  {
 
 	//if tokens is already issued display a bit different links
 	if ( sessionStorage.getItem('accessToken') != null && sessionStorage.getItem('refreshToken') != null ) {
-		$(".tologinbutton").html('<a href="admin/">admin page</a><br><a href="#logout">logout</a>');
+		//console.log("true"); //debug
+		$(".tologinbutton, .tocodebutton").hide();
+		$(".toadminpage, .logout").show();
+		//$(".tologinbutton").html('<a href="admin/">admin page</a><br><a href="#logout">logout</a>');
+	} else {
+		//console.log("false"); //debug
+		$(".tologinbutton, .tocodebutton").show();
+		$(".toadminpage, .logout").hide();
+		
 	}
 	
 	//if #login form button is available add listener for doLogin
 	if ($("#login").length) {
 		$("#login").bind('click', doLogin);		
 	}
+	if ($("#logout").length) {
+		$("#logout").bind('click', doLogout);		
+	}
 
 }); //end of DOMContentLoaded
 
-
-/**
- * doLogin 
- * 
- * 
- * POSTs ajax login request to api and handles feedback
+/*
  * 
  */
-function doLogin(ev) {
-	let username = $('#textusername').val();
-	let password = $('#textpassword').val();
-	
-	let h = new Headers();
-	
-	let jsondata = {
-		    "serviceName": "generateToken",
-		    "param": {
-		        "email": username,
-		        "password": password
-		    }	
+function validateRefreshToken() {
+	let data = 
+	{
+		"serviceName":"validateRefreshToken",
+		"param":{
+			"parametri":"juu"
+		}
 	};
 	
-	let testdata = {
-		    "serviceName": "generateToken",
-		    "param": {
-		        "email": "testi@domaini.fi",
-		        "password": "M0n1muotoinenTest!SalaKala"
-		    }	
-	};
+	postToApi(data);
+	if (ans) {
+		//if refreshtoken is still valid lets set new access and refreshtokens
+		if (ans.response.message.accessToken && ans.response.message.refreshToken) {
+			
+			sessionStorage.setItem('accessToken', ans.response.message.accessToken);
+			sessionStorage.setItem('refreshToken', ans.response.message.refreshToken);
+
+		} else {
+			//not recieving access and refrestokens
+		}
+	}
+}
+
+/**
+ * ajaxStop
+ * 
+ * This runs after every ajax function is finished. For example handles redirection on logon.
+ * So this helps with asyncronous responses
+ * 
+ * 
+ * @returns
+ */
+$(document).ajaxStop(function() {
 	
-	let dataToPost = JSON.stringify(jsondata);
-	//let dataToPost = JSON.stringify(testdata);
+	//console.log("ajaxStop code: " + JSON.stringify(code)); //debug
+	switch (code) {
+		case 200:
+			//redirect to admin page
+			window.location.replace('admin/index.php');
+			break;
+		case 201:
+			//refreshtoken updated
+			break;
+		case 666:
+			break;
+			
+		default:
+			//do nothing
+			break;
+	}
 	
+});
+
+/**
+ * 
+ * @param dataToPost
+ * @returns
+ */
+function postToApi(dataToPost) {
+	let headerType, authHeader;
+	// if tokens is already available pass them in header
+	if ( sessionStorage.getItem('accessToken') != null && sessionStorage.getItem('refreshToken') != null ) {
+		let headerType = 'Authorization';
+		let authHeader = 'Bearer ' + sessionStorage.getItem('accessToken');
+		//console.log(headerType + ": " + authHeader); //debug
+	}
+
 	$.ajax({
 		url: apiUrl,
+		headers: {
+			headerType:authHeader
+		},
 		type: 'post',
 		contentType: 'application/json',
-		data: dataToPost,
+		data: JSON.stringify(dataToPost),
 		success: function(data) {
 			let str = JSON.stringify(data);
 			console.log(str);
 			
-			let code;
-			
+			//determine which type is response/error/warning
 			if (data.hasOwnProperty('response')) {
 				code = data.response.status;
 			} else if (data.hasOwnProperty('error')) {
@@ -89,26 +141,30 @@ function doLogin(ev) {
 			
 			//lets read response
 			switch (code) {
+				// login
 				case 200:
-					//if login credentials are ok and response 200, lets store given tokens
-					if (data.response.message.accessToken && data.response.message.refreshToken) {
-						//TODO:how to keep sessions alive when opening new tab in browser?
-						sessionStorage.setItem('accessToken', data.response.message.accessToken);
-						sessionStorage.setItem('refreshToken', data.response.message.refreshToken);
-						//redirect to admin page
-						window.location.replace('admin/index.php');
-					} else {
-						//not recieving access and refrestokens
-					}
+				// refresh token updated
+				case 201:
+					// if login credentials are ok and response 200, lets store given tokens
+					// other case with code 200 is when we are refreshing tokens with refreshtoken, still same procedure 
+						if (data.response.message.accessToken && data.response.message.refreshToken) {
+							//TODO:how to keep sessions alive when opening new tab in browser?
+							sessionStorage.setItem('accessToken', data.response.message.accessToken);
+							sessionStorage.setItem('refreshToken', data.response.message.refreshToken);
+							return true;
+						} else {
+							return false;
+						}
+
 					break;
 
-					//field is empty but mandatory
+				//field is empty but mandatory
 				case 103:
-					//username error
+				//username error
 				case 112:
-					//password error
+				//password error
 				case 113:
-					//highlight all empty fields for few seconds
+				//highlight all empty fields for few seconds
 					 $( "input" ).each( function(){
 						let value = $(this).val();
 						//console.log(this.id);
@@ -123,7 +179,7 @@ function doLogin(ev) {
 					 
 					break;
 					
-					//login failed incorrect password or email; shakes login button
+				//login failed incorrect password or email; shakes login button
 				case 108:
 					$(".loginsubmit").effect("shake");
 					break;
@@ -133,8 +189,48 @@ function doLogin(ev) {
 					break;
 				
 			}
-			
+		
 		}
-
 	}) //end ajax
+} //end postToApi
+
+/**
+ * 
+ * @returns
+ */
+function doLogout() {
+	sessionStorage.removeItem('accessToken');
+	sessionStorage.removeItem('refreshToken');
+	window.location.replace('');
+}
+
+/**
+ * doLogin 
+ * 
+ * 
+ * POSTs ajax login request to api and handles feedback
+ * 
+ */
+function doLogin() {
+	let username = $('#textusername').val();
+	let password = $('#textpassword').val();
+	
+	let jsondata = {
+		    "serviceName": "generateToken",
+		    "param": {
+		        "email": username,
+		        "password": password
+		    }	
+	};
+	//for quicker test, no need to fill form
+	let testdata = {
+		    "serviceName": "generateToken",
+		    "param": {
+		        "email": "testi@domaini.fi",
+		        "password": "M0n1muotoinenTest!SalaKala"
+		    }	
+	};
+
+	postToApi(jsondata);
+	//end of call is processed by ajaxStop
 } //end doLogin
