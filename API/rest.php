@@ -15,7 +15,9 @@
  *  + 20.2.2020 Finnished refreshToken. User can't renew tokens forever anymore with refreshToken. 
  *              From first request of tokens user needs to pass credentials again in AGE_OF_REFRESH_TOKEN 
  *              seconds. Default 86 400 seconds or 1 day. More specific throw exceptions on database connections.
- *              
+ *  + 27.3.2020 A small update to responses between login ok 200 and refreshToken uptate. Makes it easier to handle on client side
+ *              asyncrounous ajax calls.
+ *  
  */
 use Firebase\JWT\JWT;
 
@@ -199,7 +201,7 @@ class Rest
      * 
      * 
      */
-    public function generateTokens($userid, $refreshTokenExp) 
+    public function generateTokens($userid, $refreshTokenExp, $login = false) 
     {
         //echo"USERID :" . $userid ."\n"; // debug
         $accessTokenPayload = [
@@ -376,8 +378,14 @@ class Rest
         
         //close db connection
        // $this->database->disconnect();
-        
-        $this->response(SUCCESS_RESPONSE, $data);
+       
+        if ( $login ) {
+            //if from login / success 200
+            $this->response(SUCCESS_RESPONSE, $data);
+        } else {
+            // refreshtoken update response
+            $this->response(SUCCESS_UPDATE_REFRESH_TOKEN, $data);
+        }
     }
     
     /**
@@ -486,11 +494,11 @@ class Rest
             
         } catch (Exception $e) {
             //close db connection
-            $this->database->disconnect();
+            //$this->database->disconnect();
             $this->throwException(ACCESS_TOKEN_ERROR, "AccessToken: ".$e->getMessage());
         }
         //close db connection
-        $this->database->disconnect();
+        //$this->database->disconnect();
         
     }
     

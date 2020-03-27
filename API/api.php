@@ -66,7 +66,7 @@ class Api extends Rest
         }
 
         //if everything is ok lets call token generator
-        $this->generateTokens($user['Id'], 0);
+        $this->generateTokens($user['Id'], 0, true);
         
     }
     /**

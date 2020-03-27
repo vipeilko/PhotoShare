@@ -133,7 +133,8 @@ $error_messages = array (
  * Success responses
  * 
  */
-define('SUCCESS_RESPONSE',      200);
+define('SUCCESS_RESPONSE'               , 200);
+define('SUCCESS_UPDATE_REFRESH_TOKEN'   , 201);
 
 
 
