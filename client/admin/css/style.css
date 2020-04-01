@@ -1,0 +1,102 @@
+body {
+	background-color: #3aafa9;
+	font-family: LeagueGothic, Verdana;
+	font-size: large;
+	margin: 0;
+	
+}
+@font-face {
+	font-family: LeagueGothic;
+	src: url("../../font/LeagueGothic-Regular.otf") format("opentype");
+	font-weight: normal;
+	
+}
+
+.container {
+	display: flex;
+	flex-flow: row;	
+	min-height: 100vh;
+}
+
+.left {
+	flex: 1;
+	/*border: 1px dashed #000;*/
+	max-width: 245px;
+}
+
+.right {
+	width: 80%;
+/*border: 1px dashed #000;*/
+}
+
+.subitem {
+	margin: 2px;
+/*border: 1px dashed #000;*/
+}
+
+.logo {
+	text-align: center;
+	
+}
+.content  {
+	display: flex;
+	font-size: 20px; 
+
+}
+.rightcontainer {
+	margin-left: 3em;
+	border-left: 5px solid #e3e3e3;
+
+}
+.secondsubitem {
+	display: grid;
+	height: 100%;
+	margin-left: 25px;
+}
+
+.adduser input[type=text], .adduser input[type=password] {
+	height: 20px;
+	width: 225px;
+	border: none;
+	font-family: LeagueGothic, Verdana;
+	font-size: 20px;
+	margin-bottom: 5px;
+	
+}
+
+.subitemheader {
+	padding-left: 2px;
+	margin-bottom: 5px;
+}
+
+#userlist {
+	padding: 2px;
+	border: none;
+	overflow: hidden;
+	width: 225px;
+	font-family: LeagueGothic, Verdana;
+	font-size: 20px;
+}
+
+#submitRemoveUsers {
+	border: 1px solid #17242a;
+	background-color: Transparent;
+	outline: none;
+	font-family: LeagueGothic, Verdana;
+	text-transform:uppercase;
+	font-size: 20px;
+	margin-top: 5px;
+}
+#contentheader {
+	color: #e3e3e3;
+	font-size: 48px;
+	letter-spacing:2px;
+	margin-left: 25px;
+	
+}
+
+.item8 {
+}
+
+.item9 {
+}

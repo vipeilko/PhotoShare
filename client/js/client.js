@@ -17,7 +17,7 @@ var code = null; 										// Stores latest response code from API
 
 //END SETTINGS
 
-document.addEventListener('DOMContentLoaded', () =>  {
+$(document).ready(function() {
 	console.log(sessionStorage.getItem('accessToken')); // debug
 	console.log(sessionStorage.getItem('refreshToken')); // debug
 
@@ -42,7 +42,7 @@ document.addEventListener('DOMContentLoaded', () =>  {
 		$("#logout").bind('click', doLogout);		
 	}
 
-}); //end of DOMContentLoaded
+}); //end document ready
 
 /*
  * 
