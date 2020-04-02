@@ -1,5 +1,11 @@
 <?php
-
+/** 
+ * client/admin/index.php 
+ * 
+ * 1.4.2020 First introduction, still work to do with layout
+ * 2.4.2002 Layout fixes and additions
+ * 
+ */
 
 
 
@@ -19,8 +25,17 @@
 
 <div class="container"><!-- container -->
 	<div class="item left">
-		<div class="subitem tools">tooolzlogo</div>
-		<nav class="subitem navigation">navigation</nav>
+		<div class="subitem tools">
+			<h2>ADMINISTRATIVE</h2>
+			<span class="subheader">TOOLS</span>
+		</div>
+		<nav class="subitem navigation">
+			<a id="main" href="#main">main</a>
+			<a id="user" href="#user">users</a>
+			<a id="code" href="#code">codes</a>
+			<a id="event" href="#event">events</a>
+			<a id="logout" href="#logout">logout</a>
+		</nav>
 		<!-- maybe one more for logout? -->
 	</div><!-- end of left -->
 	

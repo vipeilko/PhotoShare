@@ -56,3 +56,8 @@ API/passwordHash.php
 .settings/org.eclipse.php.ui.prefs
 *.jpg
 /data/images/qr/
+client/font/LeagueGothic-CondensedItalic.otf
+client/font/LeagueGothic-CondensedRegular.otf
+client/font/LeagueGothic-Italic.otf
+client/font/LeagueGothic-Regular.otf
+client/font/SIL Open Font License.txt

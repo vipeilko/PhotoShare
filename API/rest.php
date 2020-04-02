@@ -17,6 +17,8 @@
  *              seconds. Default 86 400 seconds or 1 day. More specific throw exceptions on database connections.
  *  + 27.3.2020 A small update to responses between login ok 200 and refreshToken uptate. Makes it easier to handle on client side
  *              asyncrounous ajax calls.
+ *  + 02.4.2020 User class is now declared here for software wide use. Added user related functions.
+ *  
  *  
  */
 use Firebase\JWT\JWT;
@@ -28,7 +30,9 @@ class Rest
     protected $request;         // contains http post inputstream
     protected $serviceName;     // contains requested service name
     protected $param;           // cointains parameters in request
-
+    
+    protected user $user;
+    
     public function __construct()
     {
         
@@ -43,12 +47,9 @@ class Rest
         
         $this->validateRequest($this->request);
         
-        //echo ("Service name: " . $this->serviceName . "\n"); //debug
-
-        /*
-        if ('generatetoken' != strtolower($this->serviceName)) {
-            $this->validateAccessToken();
-        }*/
+        // generate user object
+        $this->user = new user();
+        
         
         // Switch-case to handle different type request
         // Probalby best practice is list all cases here, so not a single service(function) is available without intend
@@ -63,6 +64,9 @@ class Rest
             case "generateToken":
                 //
                 break;
+            // list all authorization needed services here
+            case "getPermissions":
+            case "getRoles":
             case "testAuthorization":
                 $this->validateAccessToken();
                 break;
@@ -238,7 +242,7 @@ class Rest
             $this->throwException(JWT_PROCESSING_ERROR, $e->getMessage());
         }
         
-        //TODO: COMBINE THESE TWO UPDATES TO ONE FUNCTION 
+        //TODO: COMBINE THESE TWO UPDATES TO ONE FUNCTION
         
         //echo 'Database connection status after query: ' . $this->database->getAttribute(PDO::ATTR_CONNECTION_STATUS) ."\n"; // For debugg
         // DB UPDATE OF ACCESSTOKEN STARTS FROM HERE
@@ -282,7 +286,7 @@ class Rest
             
         } 
 
-        if ( $count == 0){
+        if ( $count == 0) {
             //echo "RefreshTokenPayload exp: " . $refreshTokenPayload['exp'];
             //else it is zero and we insert it
             try {
@@ -490,7 +494,10 @@ class Rest
                 $this->response(USER_IS_DISABLED, "This user is disabled.");
             }
             
-            $this->userId = $payload->userId;
+            // if validated correctly lets set 
+            
+            $this->user->setUserId($payload->userId);
+            //$this->userId = $payload->userId;
             
         } catch (Exception $e) {
             //close db connection

@@ -22,6 +22,7 @@ body {
 	flex: 1;
 	/*border: 1px dashed #000;*/
 	max-width: 245px;
+	border-right: 5px solid #2b7a77;
 }
 
 .right {
@@ -45,7 +46,7 @@ body {
 }
 .rightcontainer {
 	margin-left: 3em;
-	border-left: 5px solid #e3e3e3;
+	border-left: 5px solid #def2f1;
 
 }
 .secondsubitem {
@@ -62,6 +63,9 @@ body {
 	font-size: 20px;
 	margin-bottom: 5px;
 	
+}
+.adduser label:hover {
+	color: #def2f1;
 }
 
 .subitemheader {
@@ -87,16 +91,52 @@ body {
 	font-size: 20px;
 	margin-top: 5px;
 }
+#submitRemoveUsers:hover {
+	color: #def2f1;
+	border: 1px solid #def2f1;
+	
+}
 #contentheader {
-	color: #e3e3e3;
+	color: #def2f1;
 	font-size: 48px;
 	letter-spacing:2px;
 	margin-left: 25px;
 	
 }
-
-.item8 {
+.tools {
+	text-align: center;
+	border-bottom: 5px solid #2b7a77;
+	margin: 0px;
+}
+.tools h2 {
+	color: #def2f1;
+	font-size: 48px;
+	margin-bottom: 0px;
+	margin-top: 20px;
+}
+.subheader {
+	color: #def2f1;
+	font-size: 20px;
 }
 
-.item9 {
+.navigation {
+	text-align: center;
+	margin: 0;
+	padding: 0;
+	width: 200px;
+	position: fixed;
+	height: 100%;
+	overflow: auto;
+
+	
+}
+.navigation a {
+	display: block;
+	text-decoration: none;
+  	color: #17242a;
+	font-family: LeagueGothic, Verdana;
+	font-size: 38px;
+}
+.navigation a:hover:not(.active) {
+	color: #def2f1;
 }
