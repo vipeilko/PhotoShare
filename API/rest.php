@@ -65,6 +65,7 @@ class Rest
                 //
                 break;
             // list all authorization needed services here
+            case "getUsers":
             case "getPermissions":
             case "getRoles":
             case "testAuthorization":
@@ -459,7 +460,7 @@ class Rest
             
         } catch (Exception $e) {
             //close db connection
-            $this->database->disconnect();
+           //$this->database->disconnect();
             $this->throwException(REFRESH_TOKEN_ERROR, "RefreshToken: ".$e->getMessage());
         }
     }
@@ -481,7 +482,6 @@ class Rest
             //moved SQL connection from __construct(). At least do not make so many connections to database. 
             $db = new Database();
             $this->database = $db->connect();
-            
             $sql = $this->database->prepare("SELECT Id, Disabled FROM users WHERE Id = :id");
             $sql->bindParam(":id", $payload->userId);
             $sql->execute();
@@ -611,7 +611,7 @@ class Rest
      */
     public function getBearerToken() 
     {
-        $headers = $this->getAuthorizationHeader();
+        $headers = $this->getAuthorizationHeader();        
         
         if (!empty($headers)) {
             $token = explode(" ", $headers, 2);

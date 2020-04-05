@@ -1,0 +1,4 @@
+<?php
+?>
+
+<div>Mainpage</div>

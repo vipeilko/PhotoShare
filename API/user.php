@@ -20,6 +20,7 @@ class user {
     protected $userId;
     protected $permissions;
     protected $roles;
+    protected $allUsers;
     public $database;
     
     
@@ -93,12 +94,12 @@ class user {
         while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
             if ( $grouped ) {
                 //permissions
-                $this->permissions[$row["Type"]][$row["Descr"]]['label'] = $row["Label"];
-                $this->permissions[$row["Type"]][$row["Descr"]]['authorized'] = $row['Authorized'];
+                $this->permissions['permission'][$row["Type"]][$row["Descr"]]['label'] = $row["Label"];
+                $this->permissions['permission'][$row["Type"]][$row["Descr"]]['authorized'] = $row['Authorized'];
                 
                 // roles, only add if authorized one of permissions
                 if ( $row['Authorized'] == 1 ) {
-                    $this->roles['role'][$row["Type"]] = 1; // role->user->1 == true
+                    $this->roles['role'][$row["Type"]] = 1; // role->role->user->1 == true
                 }
             } else { //This should not be used anymore
                 //$this->permissions[$row["Descr"]] = $row["Authorized"];
@@ -108,7 +109,77 @@ class user {
         
         $this->database = $db->disconnect(); 
     }
+    /**
+     * 
+     * 
+     * @param string $permtype
+     * @param string $descr
+     * @return boolean
+     */
+    public function checkPrivilige(string $perm_type, string $descr) 
+    {
+        if ( empty($this->permissions) ) {
+            $this->getUserPermissions(true);
+        }
+        
+        //echo("perm_type " . $perm_type . "\n"); //debug
+        //echo("perm_Desc " . $descr . "\n"); //debug
+        
+        //print_r ($this->permissions);
+        
+        if ( $this->permissions['permission'][$perm_type][$descr]['authorized'] == 1 ) {
+            return true;
+        }
+        return false;
+    }
+    
+    /**
+     * 
+     */
+    private function getAllUsers() 
+    {
+        if ( !$this->checkPrivilige(PERM_USER, PERM_DESCR_LABEL_USER) ) {
+            $this->throwException(USER_HAS_NO_RIGHT, "User has no right to fetch all users");
+        }
+        
+        $db = new Database();
+        $this->database = $db->connect();
+        
+        $disabled = 0;
+        
+        $sql = "SELECT Id, FirstName, LastName FROM users WHERE Disabled = :disabled";
+        $userId = $this->userId;
+        $stmt = $this->database->prepare($sql);
+        $stmt->bindParam(":disabled", $disabled);
+        
+        $stmt->execute();
 
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $this->allUsers['users'][$row['Id']]['id'] = $row['Id'];
+            $this->allUsers['users'][$row['Id']]['firstname'] = $row['FirstName'];
+            $this->allUsers['users'][$row['Id']]['lastname'] = $row['LastName'];
+        }
+        
+        $this->database = $db->disconnect(); 
+        
+    }
+    public function getUserById()
+    {
+        
+    }
+    
+    
+    public function getUsers() 
+    {
+        $this->getAllUsers();
+        return $this->allUsers;
+    }
+    
+    public function printAllUsers() 
+    {
+        print_r ($this->allUsers);
+    }
+    
     public function printPermissions()
     {
         print_r ($this->permissions);
@@ -147,7 +218,7 @@ class user {
     }
     /**
      *
-     * @return Json string
+     * @return string
      */
     public function getPermissions()
     {

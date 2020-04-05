@@ -21,7 +21,7 @@ $(document).ready(function() {
 	console.log(sessionStorage.getItem('accessToken')); // debug
 	console.log(sessionStorage.getItem('refreshToken')); // debug
 
-	//if tokens is already issued display a bit different links
+	// if tokens is already issued display a bit different links
 	if ( sessionStorage.getItem('accessToken') != null && sessionStorage.getItem('refreshToken') != null ) {
 		//console.log("true"); //debug
 		$(".tologinbutton, .tocodebutton").hide();

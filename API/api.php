@@ -93,14 +93,32 @@ class Api extends Rest
         echo ("Authorization ok.");
     }
     
+    /**
+     * getRoles
+     * 
+     * Gets user roles
+     * 
+     */
     public function getRoles() {
         //echo("User id: " . $this->user->getUserId());
         //print_r($this->user->getRoles());
         $this->response(SUCCESS_RESPONSE, $this->user->getRoles());
     }
     
+    /**
+     * getPermissions
+     * 
+     * gets user permissions
+     */
     public function getPermissions() {
         $this->response(SUCCESS_RESPONSE, $this->user->getPermissions());
+    }
+    /**
+     * getAllActiveUsers
+     * 
+     */
+    public function getUsers() {
+        $this->response(SUCCESS_RESPONSE, $this->user->getUsers());
     }
     
 }
