@@ -14,6 +14,7 @@ const apiUrl = 'http://192.168.1.4/PhotoShare/API/';	// Application program inte
 var code = null; 										// Stores latest response code from API
 var type = null;										// Stores latest response type from API
 var dataToPostAfterRefreshingTokens = null;				// Stores last request that failed because of experied token
+var userdata = null;									// Stores userdata
 
 //Document loaded
 $(document).ready(function() {
@@ -149,26 +150,39 @@ function postToApi(dataToPost) {
 				
 				// getUsers
 				if ( data.response.message.hasOwnProperty('users') ) {
-					
+					//save userdata
+					userdata = data;
 					// load users to list
-					for (let user of Object.keys(data.response.message.users)) {
+					for (let user of Object.keys(userdata.response.message.users)) {
 						//console.log(user);
 						//console.log(data.response.message.users[user].firstname);
-						$('#userlist').append('<option id="user' + data.response.message.users[user].id + '" value="' + data.response.message.users[user].id + '">' + data.response.message.users[user].firstname + ' ' + data.response.message.users[user].lastname + '</option>');
+						$('#userlist').append('<option id="user' + userdata.response.message.users[user].id + '" value="' + userdata.response.message.users[user].id + '">' + userdata.response.message.users[user].firstname + ' ' + userdata.response.message.users[user].lastname + '</option>');
 					
 					}
 					
-					//TODO: continue here
+
 					$('#userlist').on('click', function () {
-						if ( $('#userlist').children("option:selected").val() != 0 ) {	
+						
+						if ( $('#userlist').children("option:selected").val() != 0 ) {
+							// Fill form with selected user information
+							$('input#firstname').val(userdata.response.message.users[$('#userlist').children("option:selected").val()].firstname);
+							$('input#lastname').val(userdata.response.message.users[$('#userlist').children("option:selected").val()].lastname);
+							$('input#email').val(userdata.response.message.users[$('#userlist').children("option:selected").val()].email);
+
+							// generate payload to request user permissions from API
 							dataToPost = 
 							{
-									"serviceName":"getUserInformationById",
+									"serviceName":"getUserPermissionsById",
 									"param":{
 										"userid":$('#userlist').children("option:selected").val()
 									}
 							};
+							// post permission request to API
 							postToApi(dataToPost);
+						} else {
+							// if first of the list 'add user' is selected value is 0
+							// clear all input fields, except submit button
+							$('.edituser input').not(":last").val("");
 						}
 					});
 				}

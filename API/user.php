@@ -17,10 +17,11 @@
 
 class user {
     
-    protected $userId;
-    protected $permissions;
-    protected $roles;
-    protected $allUsers;
+    protected $userId;      // this userid
+    protected $permissions; // this user permission
+    protected $roles;       // this user roles
+    protected $allUsers;    // allusers for list
+    protected $lastPerm;    //
     public $database;
     
     
@@ -147,7 +148,7 @@ class user {
         
         $disabled = 0;
         
-        $sql = "SELECT Id, FirstName, LastName FROM users WHERE Disabled = :disabled";
+        $sql = "SELECT Id, FirstName, LastName, Email FROM users WHERE Disabled = :disabled";
         $userId = $this->userId;
         $stmt = $this->database->prepare($sql);
         $stmt->bindParam(":disabled", $disabled);
@@ -158,16 +159,49 @@ class user {
             $this->allUsers['users'][$row['Id']]['id'] = $row['Id'];
             $this->allUsers['users'][$row['Id']]['firstname'] = $row['FirstName'];
             $this->allUsers['users'][$row['Id']]['lastname'] = $row['LastName'];
+            $this->allUsers['users'][$row['Id']]['email'] = $row['Email'];
         }
         
         $this->database = $db->disconnect(); 
         
     }
-    public function getUserById()
+    
+    /**
+     * 
+     */
+    private function getUserPermissionById(int $id)
     {
+        if ( !$this->checkPrivilige(PERM_USER, PERM_DESCR_EDIT_USER) ) {
+            $this->throwException(USER_HAS_NO_RIGHT, "User has no right to fetch user permissions");
+        }
         
+        $db = new Database();
+        $this->database = $db->connect();
+        
+        $disabled = 0;
+        
+        $sql = "SELECT up.PermId, pt.Type, p.Descr, p.Label, up.Authorized FROM user_perm up, permissions p, permission_type pt WHERE up.UserId = :userid AND up.PermId = p.Id";
+        $userId = $id;
+        $stmt = $this->database->prepare($sql);
+        $stmt->bindParam(":userid", $id);
+        
+        $stmt->execute();
+        
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $this->lastPerm['permissions'][$row['Type']]['permid'] = $row['PermId'];
+            $this->lastPerm['permissions'][$row['Type']]['descr'] = $row['Descr'];
+            $this->lastPerm['permissions'][$row['Type']]['label'] = $row['Label'];
+            $this->lastPerm['permissions'][$row['Type']]['authorized'] = $row['Authorized'];
+ 
+        }
+        
+        $this->database = $db->disconnect(); 
     }
     
+    public function getUserPerm(int $id) {
+        $this->getUserPermissionById($id);
+        return $this->lastPerm;
+    }
     
     public function getUsers() 
     {

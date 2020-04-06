@@ -8,7 +8,7 @@
  */
 define('API_ACCESS_TOKEN_KEY', 'draYuTg32FFd8TFkdEMfVFHVtL9yhmVD4XJnSkFUkAH6VrMedmM2UND9jLkZk8NDUsZPauQFAUj8aKayGR2ZVEnQswW4tGJxLbKCsLR39ZPhKSNwjdy2R95DNsK5EEJqVM2TsPvBcXue8Jw6yGtnWCC43A6CpwaaPVd6Chs6wvy2H6vxGj3UtMRCKEsEk3CEEVhzVerdJreY9V6bdhQtg2dFksbqnSvhT64VKxYVWXJgvh6yruFjm5DVJUELstE7');
 define('API_REFRESH_TOKEN_KEY', 'xCzkcXKmH7nhCqgzLcP9WbJtBWgaw3MuJmVkBJV4zn78x2JVhZ8GVMNLngfLF8pZCNSym4YvFm2PyAzLy58hjQ3aVefYTHXYH8wzp3RukbM3FwHs4kTkCUv7BGU4cNtrxWTbWeTwmkDR7nxWKJMMHrmh5qvcvQubVKwc4sE8ZyzkBDLp9g5JWCsEXdWXS2k3wtKhAtSKwHTchvnAGgtvkZTLMZ42Gfqd5eketReZRDRbqTxdsWC8zeX6feB8JurG');
-define('AGE_OF_ACCESS_TOKEN', 60);//3600);//60);          // default 60 seconds or one minute (for now)
+define('AGE_OF_ACCESS_TOKEN', 3600);//3600);//60);          // default 60 seconds or one minute (for now)
 define('AGE_OF_REFRESH_TOKEN', 24*60*60);   // default 86 400 seconds or 1 day
 define('API_ALGORITHM', 'HS256');           // default HS256
 define('TOKEN_TYPE_ACCESS', 1);             // Token type 1 = access and 2 = refresh. This is used in database to keep track on issued tokens

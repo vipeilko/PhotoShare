@@ -64,7 +64,12 @@ class Rest
             case "generateToken":
                 //
                 break;
+            case "getUserPermById":
+                $this->validateAccessToken();
+                $this->getUserPermById();
+                break;
             // list all authorization needed services here
+            
             case "getUsers":
             case "getPermissions":
             case "getRoles":
