@@ -178,9 +178,16 @@ class user {
         $db = new Database();
         $this->database = $db->connect();
         
-        $disabled = 0;
-        
-        $sql = "SELECT up.PermId, pt.Type, p.Descr, p.Label, up.Authorized FROM user_perm up, permissions p, permission_type pt WHERE up.UserId = :userid AND up.PermId = p.Id";
+        $sql = "SELECT p.Id, pt.Type, p.Descr, p.Label, up.Authorized FROM 
+                                                                        user_perm up, 
+                                                                        permissions p, 
+                                                                        permission_type pt WHERE 
+
+                                                                        up.UserId = :userid AND 
+                                                                        up.PermId = p.Id AND 
+                                                                        pt.id = p.PermType
+                
+                                                                        ORDER BY p.Order asc";
         $userId = $id;
         $stmt = $this->database->prepare($sql);
         $stmt->bindParam(":userid", $id);
@@ -188,11 +195,10 @@ class user {
         $stmt->execute();
         
         while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-            $this->lastPerm['permissions'][$row['Type']]['permid'] = $row['PermId'];
-            $this->lastPerm['permissions'][$row['Type']]['descr'] = $row['Descr'];
-            $this->lastPerm['permissions'][$row['Type']]['label'] = $row['Label'];
-            $this->lastPerm['permissions'][$row['Type']]['authorized'] = $row['Authorized'];
- 
+            $this->lastPerm['permissions'][$row['Type']][$row['Descr']]['permid'] = $row['Id'];
+            $this->lastPerm['permissions'][$row['Type']][$row['Descr']]['descr'] = $row['Descr'];
+            $this->lastPerm['permissions'][$row['Type']][$row['Descr']]['label'] = $row['Label'];
+            $this->lastPerm['permissions'][$row['Type']][$row['Descr']]['authorized'] = $row['Authorized'];
         }
         
         $this->database = $db->disconnect(); 

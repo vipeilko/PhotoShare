@@ -93,18 +93,13 @@ class Api extends Rest
         echo ("Authorization ok.");
     }
     
+    /**
+     * 
+     */
     public function getUserPermById() {
-        echo ($this->param['userid']);
-        if ( isset($this->param['userid']) ) {
-            $id = $this->param['userid'];
-            if ( is_numeric($id) ) {
-                echo"JOOO";
-                $this->response(SUCCESS_RESPONSE, $this->user->getUserPerm($id));
-            }
-        } else {
-            die("Not working");
-        }
-        
+        // validate input
+        $id = $this->validateParameter('userid', $this->param['userid'], INTEGER);
+        $this->response(SUCCESS_RESPONSE, $this->user->getUserPerm($id));   
     }
     
     /**

@@ -18,23 +18,13 @@
     				<input id="email" type="text" placeholder="charlie.brown@cartoo.ns">
     				<input id="password" type="password" placeholder="password">
     				<input id="retypepassword" type="password" placeholder="re-type password again">
-    				<span class="subitemheader">user permissions</span>
-    				<label><input id="perm_user_add" type="checkbox"><span>add users</span></label>
-    				<label><input id="perm_user_edit" type="checkbox"><span>edit users</span></label>
-    				<label><input id="perm_user_delete" type="checkbox"><span>delete users</span></label>
-    				<span class="subitemheader">code permissions</span>
-    				<label><input id="perm_code_generate" type="checkbox"><span>generate codes</span></label>
-    				<label><input id="perm_code_clear" type="checkbox"><span>clear unused codes</span></label>
-    				<label><input id="perm_code_process" type="checkbox"><span>process images</span></label>
-					<span class="subitemheader">event permissions</span>
-    				<label><input id="perm_event_create" type="checkbox"><span>create new events</span></label>
-    				<label><input id="perm_event_edit" type="checkbox"><span>edit events</span></label>
-    				<label><input id="perm_event_delete" type="checkbox"><span>delete events</span></label>    			
-					<span class="subitemheader">event permissions</span>
-    				<label><input id="perm_event_create" type="checkbox"><span>create new events</span></label>
-    				<label><input id="perm_event_edit" type="checkbox"><span>edit events</span></label>
-    				<label><input id="perm_event_delete" type="checkbox"><span>delete events</span></label>    	
-    				<input id="submitRemoveUsers" type="submit" value="create new user">
+    				<div id="permissions" class="subitem adduser edituser secondsubitem">
+					<!-- Dynamic content is created here -->	
+    				</div>
+    				<input id="submitCreateUser" type="submit" value="create new user">
+    				<input id="submitEditUser" type="submit" value="edit user">
+    				
+    				
     			</div>
     			
     		</div> <!-- end of content -->

@@ -82,7 +82,7 @@ body {
 	font-size: 20px;
 }
 
-#submitRemoveUsers {
+#submitRemoveUsers, #submitEditUser, #submitCreateUser {
 	border: 1px solid #17242a;
 	background-color: Transparent;
 	outline: none;
@@ -91,11 +91,16 @@ body {
 	font-size: 20px;
 	margin-top: 5px;
 }
-#submitRemoveUsers:hover {
-	color: #def2f1;
-	border: 1px solid #def2f1;
-	
+
+#submitEditUser {
+	display: none;
 }
+
+#submitRemoveUsers:hover, #submitEditUser:hover, #submitCreateUser:hover {
+	color: #def2f1;
+	border: 1px solid #def2f1;	
+}
+
 #contentheader {
 	color: #def2f1;
 	font-size: 48px;

@@ -15,6 +15,7 @@ var code = null; 										// Stores latest response code from API
 var type = null;										// Stores latest response type from API
 var dataToPostAfterRefreshingTokens = null;				// Stores last request that failed because of experied token
 var userdata = null;									// Stores userdata
+var userpermissions = null;								// Stores userpermissions
 
 //Document loaded
 $(document).ready(function() {
@@ -129,7 +130,35 @@ function postToApi(dataToPost) {
 			//determine which type is response/error/warning
 			if (data.hasOwnProperty('response') ) {
 				code = data.response.status;
-		
+				if ( data.response.message == null ) return;
+				// getUserPermById
+				if ( data.response.message.hasOwnProperty('permissions') ) {
+					userpermissions = data;
+					$("#permissions").html("");
+					for (let perm of Object.keys(userpermissions.response.message.permissions) ) {
+						//console.log(perm); //debug
+						for  ( let subperm of Object.keys(userpermissions.response.message.permissions[perm] ) ) {
+							if ( (subperm.localeCompare("label") == 0)  ) {
+								
+								$('#permissions').append('<span class="subitemheader">' + userpermissions.response.message.permissions[perm][subperm].label + '</span>');
+							
+							} else {
+								if ( userpermissions.response.message.permissions[perm][subperm].authorized == 1 ) {
+									$('#permissions').append('<label><input  id="permid_' + userpermissions.response.message.permissions[perm][subperm].permid + '" type="checkbox" checked><span>' + userpermissions.response.message.permissions[perm][subperm].label + '</span></label>');
+								} else {
+									$('#permissions').append('<label><input  id="permid_' + userpermissions.response.message.permissions[perm][subperm].permid + '" type="checkbox"><span>' + userpermissions.response.message.permissions[perm][subperm].label + '</span></label>');
+								}
+								
+							}
+							
+							console.log(subperm);
+						}
+						//console.log(data.response.message.users[user].firstname);
+						//$('#userlist').append('<option id="user' + userdata.response.message.users[user].id + '" value="' + userdata.response.message.users[user].id + '">' + userdata.response.message.users[user].firstname + ' ' + userdata.response.message.users[user].lastname + '</option>');
+					
+					}
+				}
+				
 				//Only when roles
 				//if ( data.hasOwnProperty('role') ) {
 				if ( data.response.message.hasOwnProperty('role') ) {
@@ -159,11 +188,19 @@ function postToApi(dataToPost) {
 						$('#userlist').append('<option id="user' + userdata.response.message.users[user].id + '" value="' + userdata.response.message.users[user].id + '">' + userdata.response.message.users[user].firstname + ' ' + userdata.response.message.users[user].lastname + '</option>');
 					
 					}
-					
 
+					let clickCount = 0;
 					$('#userlist').on('click', function () {
 						
 						if ( $('#userlist').children("option:selected").val() != 0 ) {
+							clickCount++;
+							
+							// change button
+							if ( clickCount == 1) {
+								$('#submitCreateUser').toggle();
+								$('#submitEditUser').toggle();
+							}
+							
 							// Fill form with selected user information
 							$('input#firstname').val(userdata.response.message.users[$('#userlist').children("option:selected").val()].firstname);
 							$('input#lastname').val(userdata.response.message.users[$('#userlist').children("option:selected").val()].lastname);
@@ -172,7 +209,7 @@ function postToApi(dataToPost) {
 							// generate payload to request user permissions from API
 							dataToPost = 
 							{
-									"serviceName":"getUserPermissionsById",
+									"serviceName":"getUserPermById",
 									"param":{
 										"userid":$('#userlist').children("option:selected").val()
 									}
@@ -180,9 +217,16 @@ function postToApi(dataToPost) {
 							// post permission request to API
 							postToApi(dataToPost);
 						} else {
+							clickCount = 0;
 							// if first of the list 'add user' is selected value is 0
-							// clear all input fields, except submit button
-							$('.edituser input').not(":last").val("");
+							// clear all input fields with type text
+							$('.edituser input:text').val("");
+							// clear checkbox selections
+							$('.edituser input:checkbox').attr('checked', false);
+							
+							$('#submitCreateUser').toggle();
+							$('#submitEditUser').toggle();
+							
 						}
 					});
 				}
