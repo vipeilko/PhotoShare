@@ -12,7 +12,7 @@ define('AGE_OF_ACCESS_TOKEN', 3600);//3600);//60);          // default 60 second
 define('AGE_OF_REFRESH_TOKEN', 24*60*60);   // default 86 400 seconds or 1 day
 define('API_ALGORITHM', 'HS256');           // default HS256
 define('TOKEN_TYPE_ACCESS', 1);             // Token type 1 = access and 2 = refresh. This is used in database to keep track on issued tokens
-define('TOKEN_TYPE_REFRESH', 2);            // in early versions we only track refresh tokens
+define('TOKEN_TYPE_REFRESH', 2);            // in early versions we only track access tokens
 define('PASSWORD_MIN_LENGTH', 10);          // User password min lenght. Password has to contain At least a small letter, a capital letter, a number and Special character
 define('USER_PASSWORD_ALGORITYM', PASSWORD_ARGON2ID); // defautl PASSWORD_ARGON2ID, other possibilities are PASSWORD_DEFAULT, PASSWORD_BCRYPT and PASSWORD_ARGON2I 
 define('PASSWORD_COST', 10);                // Defines complexity of password calculation. Aim to 50 ms response from generating hash.
@@ -92,6 +92,7 @@ define('PERM_DESCR_LABEL_EVENT',         'label');
  * Error codes for users
  */
 define('USER_HAS_NO_RIGHT',              150);
+define('USER_PASSWORD',                  151);    
 
 
 /**

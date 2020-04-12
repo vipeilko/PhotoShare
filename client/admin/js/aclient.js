@@ -50,10 +50,10 @@ $(document).ready(function() {
 	}
 
 	if ( $("#user").length ) {
-		$("#user").click(function () { loadpage('users.php')});
+		$("#user").click(function () { loadpage('users.php') });
 	}
 	if ( $("#main").length ) {
-		$("#main").click(function () { loadpage('main.php')});	
+		$("#main").click(function () { loadpage('main.php') });	
 	}
 	
 });
@@ -89,6 +89,7 @@ $(document).ajaxStop(function() {
 	
 });
 
+
 /**
  * 
  * @param dataToPost
@@ -100,8 +101,8 @@ function postToApi(dataToPost) {
 	if ( sessionStorage.getItem('accessToken') != null && sessionStorage.getItem('refreshToken') != null ) {
 		let headerType = 'Authorization';
 		let temp = JSON.stringify(dataToPost);
+
 		// if requested function is validateRefreshToken use refreshtoken instead
-//		if ( (temp.search("validateRefreshToken")) )  {
 		if ( dataToPost.hasOwnProperty('serviceName') )  {
 			console.log("Service name: " + dataToPost.serviceName);
 			if ( !(dataToPost.serviceName == "validateRefreshToken") ) {
@@ -140,13 +141,13 @@ function postToApi(dataToPost) {
 						for  ( let subperm of Object.keys(userpermissions.response.message.permissions[perm] ) ) {
 							if ( (subperm.localeCompare("label") == 0)  ) {
 								
-								$('#permissions').append('<span class="subitemheader">' + userpermissions.response.message.permissions[perm][subperm].label + '</span>');
+								$('#permissions').append('<span id="' + perm + '_' + subperm + '_' + userpermissions.response.message.permissions[perm][subperm].permid + '" class="subitemheader">' + userpermissions.response.message.permissions[perm][subperm].label + '</span>');
 							
 							} else {
 								if ( userpermissions.response.message.permissions[perm][subperm].authorized == 1 ) {
-									$('#permissions').append('<label><input  id="permid_' + userpermissions.response.message.permissions[perm][subperm].permid + '" type="checkbox" checked><span>' + userpermissions.response.message.permissions[perm][subperm].label + '</span></label>');
+									$('#permissions').append('<label><input id="' + perm + '_' + subperm + '_' + userpermissions.response.message.permissions[perm][subperm].permid + '" type="checkbox" checked><span>' + userpermissions.response.message.permissions[perm][subperm].label + '</span></label>');
 								} else {
-									$('#permissions').append('<label><input  id="permid_' + userpermissions.response.message.permissions[perm][subperm].permid + '" type="checkbox"><span>' + userpermissions.response.message.permissions[perm][subperm].label + '</span></label>');
+									$('#permissions').append('<label><input id="' + perm + '_' + subperm + '_' + userpermissions.response.message.permissions[perm][subperm].permid + '" type="checkbox"><span>' + userpermissions.response.message.permissions[perm][subperm].label + '</span></label>');
 								}
 								
 							}
@@ -349,6 +350,118 @@ function doLogout() {
 
 /**
  * 
+ * @returns
+ */
+
+//TODO: continue from here
+function addUser() {
+	let tempPerm;
+	let tempObj = {};
+	let sendPerm = {
+  				"serviceName":"addUser",
+  				"param":{
+  					"userid":$('#userlist').children("option:selected").val(),
+  					"firstname":$('#firstname').val(),
+  					"lastname":$('#lastname').val(),
+  					"email":$('#email').val(),
+  					"password":$('#password').val(),
+  					"retypepassword":$('#retypepassword').val()
+  				}
+		};		
+	
+	$('#permissions input').each(function() {
+		if (this.id != "" ) {
+			if ( this.checked ) {
+				tempPerm = this.id.split("_", 3);
+				let header = tempPerm[0];
+				let descr = tempPerm[1];
+	//			console.log("Header: " + header + " descr: " + descr);
+				tempObj = 
+				{
+					"param":{
+						"permissions": {
+							[header]: {
+				                   [descr]: {
+				                       "permid": tempPerm[2],
+				                       "authorized": "1"
+				                   }
+				            }
+						}
+					}
+				};
+
+				$.extend(true, sendPerm, tempObj, sendPerm);
+				//sendPerm = tempObj2;
+			} //END IF ELSE HERE
+		}
+		i++;
+	});
+	
+	console.log(JSON.stringify(sendPerm));
+	postToApi(sendPerm);
+}
+
+/**
+ * 
+ * @returns
+ */
+function editUser() {
+	let tempPerm;
+	let tempObj = {};
+	/*let sendPerm = { 
+			permissions:[{}]
+	};*/
+	let sendPerm = {
+  				"serviceName":"editUser",
+  				"param":{
+  					"userid":$('#userlist').children("option:selected").val(),
+  					"firstname":$('#firstname').val(),
+  					"lastname":$('#lastname').val(),
+  					"email":$('#email').val(),
+  					"password":$('#password').val(),
+  					"retypepassword":$('#retypepassword').val()
+  				}
+		};		
+	
+	$('#permissions input').each(function() {
+		if (this.id != "" ) {
+			if ( this.checked ) {
+				tempPerm = this.id.split("_", 3);
+				let header = tempPerm[0];
+				let descr = tempPerm[1];
+	//			console.log("Header: " + header + " descr: " + descr);
+				tempObj = 
+				{
+					"param":{
+						"permissions": {
+							[header]: {
+				                   [descr]: {
+				                       "permid": tempPerm[2],
+				                       "authorized": "1"
+				                   }
+				            }
+						}
+					}
+				};
+
+				$.extend(true, sendPerm, tempObj, sendPerm);
+				//sendPerm = tempObj2;
+			} //END IF ELSE HERE
+		}
+		i++;
+	});
+	
+	console.log(JSON.stringify(sendPerm));
+	postToApi(sendPerm);
+}
+
+function addElement (ElementList, element) {
+    let newList = Object.assign(ElementList, element)
+    return newList
+}
+
+/**
+ * 
  * @param page
  * @returns
  */
@@ -363,6 +476,8 @@ function loadpage(page){
 	      $('#rightcontainer').html(data);
 	      
 	      if( page == 'users.php' ) {
+	    	  $('#submitEditUser').click(function() { editUser() });
+	    	  
 	    	  dataToPost = 
 	    	  {
 	    				"serviceName":"getUsers",

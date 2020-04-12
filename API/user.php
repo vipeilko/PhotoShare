@@ -18,6 +18,9 @@
 class user {
     
     protected $userId;      // this userid
+    protected $firstname;
+    protected $lastname;
+    protected $email;
     protected $permissions; // this user permission
     protected $roles;       // this user roles
     protected $allUsers;    // allusers for list
@@ -139,8 +142,9 @@ class user {
      */
     private function getAllUsers() 
     {
-        if ( !$this->checkPrivilige(PERM_USER, PERM_DESCR_LABEL_USER) ) {
-            $this->throwException(USER_HAS_NO_RIGHT, "User has no right to fetch all users");
+        if ( !$this->checkPrivilige(PERM_USER, PERM_DESCR_EDIT_USER) ) {
+            return "User has no right to fetch all users";
+            //$this->throwException(USER_HAS_NO_RIGHT, "User has no right to fetch all users");
         }
         
         $db = new Database();
@@ -172,7 +176,8 @@ class user {
     private function getUserPermissionById(int $id)
     {
         if ( !$this->checkPrivilige(PERM_USER, PERM_DESCR_EDIT_USER) ) {
-            $this->throwException(USER_HAS_NO_RIGHT, "User has no right to fetch user permissions");
+            return "User has no right to get user permissions";
+            //$this->throwException(USER_HAS_NO_RIGHT, "User has no right to fetch user permissions");
         }
         
         $db = new Database();
@@ -204,7 +209,166 @@ class user {
         $this->database = $db->disconnect(); 
     }
     
-    public function getUserPerm(int $id) {
+    
+    public function setUserInformation() {
+        
+    }
+    
+    /**
+     * 
+     * @param array $permissions
+     * @return string
+     */
+    public function setUserPermissions($permissions) {
+
+        //print_r($permissions);
+        
+        $perm_id = array();
+
+        foreach ($permissions as $perm ) {
+            foreach ( $perm as $item ) {
+                foreach ( $item as $key => $value ) {
+                    if ( $key == "permid" ) {
+                        array_push($perm_id, $value);
+                    }
+                }
+            }
+        }
+        
+        /*$i = 0;
+        array_walk_recursive($permissions, function ($item, $key) use($i) {
+            //echo "$key : $item\n";
+            if ( $key == "permid" ) {
+                echo "$i : $item\n";
+               $perm_id[$i] = $item;
+               $i++;
+            }
+        });*/
+        
+        //print_r($perm_id); //debug
+        
+        $db = new Database();
+        $this->database = $db->connect();
+        
+        $sql = "UPDATE user_perm SET Authorized = 0 WHERE UserId = :userid";
+        
+        $userId = $this->getUserId();
+        $stmt = $this->database->prepare($sql);
+        $stmt->bindParam(":userid", $userId);
+        
+        $stmt->execute();
+        
+        foreach ($perm_id as $perm) {
+            $sql = "UPDATE user_perm SET Authorized = 1 WHERE UserId = :userid AND PermId = :permid";
+            
+            $stmt = $this->database->prepare($sql);
+            $stmt->bindParam(":userid", $userId);
+            $stmt->bindParam(":permid", $perm);
+            
+            $stmt->execute();
+            
+        }
+        $this->database = $db->disconnect(); 
+        
+        return("User permissions updated successfully!");
+        
+    }
+    
+    public function addUser($password) {
+        
+        $passwordHash = password_hash($password, PASSWORD_ARGON2ID, ['cost' => PASSWORD_COST]);
+        $password = null;
+        
+        $db = new Database();
+        $this->database = $db->connect();
+        
+        $createdOn = $date->format('Y-m-d H:i:s');
+        
+        $sql = "INSERT INTO users (Email, Password, FirstName, LastName, LastLogin, CreatedOn) VALUES (:email, :password, :firstname, :lastname, :timedate, :timedate)";
+        
+        $stmt = $this->database->preapare($sql);
+        $stmt->bindParam(":email", $this->email);
+        $stmt->bindParam(":password", $passwordHash);
+        $stmt->bindParam(":firstname", $this->firstname);
+        $stmt->bindParam(":lastname", $this->lastname);
+        $stmt->bindParam(":timedate", $createdOn);
+        
+        $stmt->execute();
+        
+        $this->setUserId->$this->database->lastInsertId();
+        
+        
+        //get all available permissions
+        $sql = "SELECT Id FROM permissions";
+        $stmt = $this->database->prepare($sql);
+        
+        $stmt->execute();
+        $perm_id = array();
+        
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            array_push($perm_id, $row);
+        }
+        print_r(perm_id);
+        // then add to database without permit
+        foreach ($perm_id as $perm) {
+            $sql = "UPDATE user_perm SET Authorized = 0 WHERE UserId = :userid AND PermId = :permid";
+            
+            $stmt = $this->database->prepare($sql);
+            $stmt->bindParam(":userid", $this->getUserId());
+            $stmt->bindParam(":permid", $perm);
+            
+            $stmt->execute();
+            
+        }
+        
+        
+                 
+    }
+    
+    public function updateBasicInformation(string $password = null) 
+    {
+        
+        $db = new Database();
+        $this->database = $db->connect();
+        
+        if ( !$password == null ) {
+            $sql = "UPDATE users SET password = :password WHERE Id = :userid";
+            $stmt = $this->database->prepare($sql);
+            $stmt->bindParam(":userid", $this->userId);
+            $stmt->bindParam(":password", $password);
+            
+            $stmt->execute();
+        }
+        
+        $sql = "UPDATE users SET Email = :email, FirstName = :firstname, LastName = :lastname WHERE Id = :userid";
+        
+        $stmt = $this->database->prepare($sql);
+        $stmt->bindParam(":userid", $this->userId);
+        $stmt->bindParam(":email", $this->email);
+        $stmt->bindParam(":firstname", $this->firstname);
+        $stmt->bindParam(":lastname", $this->lastname);
+        
+        $stmt->execute();
+        
+    }
+    
+    public function setEmail($email) 
+    {
+        $this->email = $email;
+    }
+    
+    public function setLastName($lastname) 
+    {
+        $this->lastname = $lastname;
+    }
+    
+    public function SetFirstName($firstname) 
+    {
+        $this->firstname = $firstname;
+    }
+    
+    public function getUserPerm(int $id) 
+    {
         $this->getUserPermissionById($id);
         return $this->lastPerm;
     }

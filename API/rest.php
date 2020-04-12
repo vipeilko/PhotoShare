@@ -18,6 +18,7 @@
  *  + 27.3.2020 A small update to responses between login ok 200 and refreshToken uptate. Makes it easier to handle on client side
  *              asyncrounous ajax calls.
  *  + 02.4.2020 User class is now declared here for software wide use. Added user related functions.
+ *  + 12.4.2020 Add and edit user
  *  
  *  
  */
@@ -69,7 +70,8 @@ class Rest
                 $this->getUserPermById();
                 break;
             // list all authorization needed services here
-            
+            case "addUser":
+            case "editUser":
             case "getUsers":
             case "getPermissions":
             case "getRoles":
@@ -137,11 +139,11 @@ class Rest
     /**
      * validateParameter
      * 
-     * Very basic data validation for boolean, integer and string
+     * Data validation function
      * 
      * @param $fieldName            // fieldName email for example
      * @param $value                // input value
-     * @param $dataType             // data type boolean, integer, string
+     * @param $dataType             // PASSWORD, EMAIL, BOOLEAN, INTEGER, STRING
      * @param boolean $required     // is data required
      * @return $value               // returns validated data
      */
@@ -247,8 +249,6 @@ class Rest
         } catch (Exception $e) {
             $this->throwException(JWT_PROCESSING_ERROR, $e->getMessage());
         }
-        
-        //TODO: COMBINE THESE TWO UPDATES TO ONE FUNCTION
         
         //echo 'Database connection status after query: ' . $this->database->getAttribute(PDO::ATTR_CONNECTION_STATUS) ."\n"; // For debugg
         // DB UPDATE OF ACCESSTOKEN STARTS FROM HERE
