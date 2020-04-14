@@ -218,16 +218,18 @@ function postToApi(dataToPost) {
 							// post permission request to API
 							postToApi(dataToPost);
 						} else {
-							clickCount = 0;
+							
 							// if first of the list 'add user' is selected value is 0
 							// clear all input fields with type text
 							$('.edituser input:text').val("");
 							// clear checkbox selections
 							$('.edituser input:checkbox').attr('checked', false);
 							
-							$('#submitCreateUser').toggle();
-							$('#submitEditUser').toggle();
-							
+							if( clickCount != 0 ) {
+								$('#submitCreateUser').toggle();
+								$('#submitEditUser').toggle();
+							}
+							clickCount = 0;
 						}
 					});
 				}
@@ -285,8 +287,9 @@ function postToApi(dataToPost) {
 				//highlight all empty fields for few seconds
 					 $( "input" ).each( function(){
 						let value = $(this).val();
-						//console.log(this.id);
-						if ( value.length == 0 || this.id == "textusername" && code == 112 || this.id == "textpassword" && code == 113) {
+						console.log(code + " : " + this.id);
+						if ( value.length == 0 || this.id == "email" && code == 112 || this.id == "textpassword" && code == 113) {
+							console.log("Highlight");
 							let originalColor = $(this).css("background-color");
 							//console.log(originalColor);
 							$(this).animate({'backgroundColor': "#e49b9b"}, 1000, function() {
@@ -394,7 +397,7 @@ function addUser() {
 				//sendPerm = tempObj2;
 			} //END IF ELSE HERE
 		}
-		i++;
+
 	});
 	
 	console.log(JSON.stringify(sendPerm));
@@ -448,16 +451,11 @@ function editUser() {
 				//sendPerm = tempObj2;
 			} //END IF ELSE HERE
 		}
-		i++;
+		
 	});
 	
 	console.log(JSON.stringify(sendPerm));
 	postToApi(sendPerm);
-}
-
-function addElement (ElementList, element) {
-    let newList = Object.assign(ElementList, element)
-    return newList
 }
 
 /**
@@ -477,6 +475,7 @@ function loadpage(page){
 	      
 	      if( page == 'users.php' ) {
 	    	  $('#submitEditUser').click(function() { editUser() });
+	    	  $('#submitCreateUser').click(function() { addUser() });
 	    	  
 	    	  dataToPost = 
 	    	  {

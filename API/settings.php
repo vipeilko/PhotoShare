@@ -60,6 +60,7 @@ define('INTEGER',   '2');
 define('STRING',    '3');
 define('EMAIL',     '4');
 define('PASSWORD',  '5');
+define('EMAIL_DB',  '6');
 
 /*
  * USERS

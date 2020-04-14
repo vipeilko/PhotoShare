@@ -179,6 +179,11 @@ class Rest
                     $this->throwException(VALIDATE_PARAMETER_EMAIL, "Invalid email format for " . $fieldName . "");
                 }
                 break;
+            case EMAIL_DB:
+                if ($this->user->checkEmail($value)) {
+                    $this->throwException(VALIDATE_PARAMETER_EMAIL, "Email is already in use");
+                }
+                break;
             case BOOLEAN:
                 if (is_bool($value)) {
                     $this->throwException(VALIDATE_PARAMETER_REQUIRED, "Datatype is not valid for " . $fieldName . ". It should be boolean.");

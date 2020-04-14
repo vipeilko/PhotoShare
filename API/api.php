@@ -105,20 +105,23 @@ class Api extends Rest
             $this->throwException(USER_HAS_NO_RIGHT, "User has no right to add user");
         }
         // validate input
-        $this->validateParameter('userid', $this->param['userid'], INTEGER);
+
         $this->validateParameter('firstname', $this->param['firstname'], STRING);
         $this->validateParameter('lastname', $this->param['lastname'], STRING);
         $this->validateParameter('email', $this->param['email'], EMAIL);
+        $this->validateParameter('email', $this->param['email'], EMAIL_DB);
         $setpassword = false;
         if ( !empty($this->param['password']) ) {
             if ( $this->param['password'] == $this->param['retypepassword']) {
                 $this->validateParameter('password', $this->param['password'], PASSWORD);
                 $setpassword = true;
             }
+        } else {
+            $this->throwException(PASSWORD_NOT_COMPLEX_ENOUGH, "Cannot add user without password");
         }
         
         $tempUser = new User();
-        $tempUser->setUserId($this->param['userid']);
+        //$tempUser->setUserId($this->param['userid']);
         $tempUser->setFirstName($this->param['firstname']);
         $tempUser->setLastName($this->param['lastname']);
         $tempUser->setEmail($this->param['email']);

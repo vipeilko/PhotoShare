@@ -282,21 +282,27 @@ class user {
         $db = new Database();
         $this->database = $db->connect();
         
+        $disabled = 0;
+        $date = new DateTime();
         $createdOn = $date->format('Y-m-d H:i:s');
         
-        $sql = "INSERT INTO users (Email, Password, FirstName, LastName, LastLogin, CreatedOn) VALUES (:email, :password, :firstname, :lastname, :timedate, :timedate)";
         
-        $stmt = $this->database->preapare($sql);
+        $sql = "INSERT INTO users (Email, Password, FirstName, LastName, Disabled, LastLogin, CreatedOn) VALUES (:email, :password, :firstname, :lastname, :disabled, :timedate, :timedate)";
+        
+        $stmt = $this->database->prepare($sql);
         $stmt->bindParam(":email", $this->email);
         $stmt->bindParam(":password", $passwordHash);
         $stmt->bindParam(":firstname", $this->firstname);
         $stmt->bindParam(":lastname", $this->lastname);
+        $stmt->bindParam(":disabled", $disabled);
         $stmt->bindParam(":timedate", $createdOn);
         
         $stmt->execute();
         
-        $this->setUserId->$this->database->lastInsertId();
         
+        $this->setUserId($this->database->lastInsertId());
+        
+        // echo ("New userid: " . $this->getUserId() ."\n"); // debug
         
         //get all available permissions
         $sql = "SELECT Id FROM permissions";
@@ -306,16 +312,22 @@ class user {
         $perm_id = array();
         
         while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-            array_push($perm_id, $row);
+            array_push($perm_id, $row['Id']);
         }
-        print_r(perm_id);
+        //print_r($perm_id); //debug
         // then add to database without permit
+        
+        $userid = $this->getUserId();
+        $authorized = 0;
+        
         foreach ($perm_id as $perm) {
-            $sql = "UPDATE user_perm SET Authorized = 0 WHERE UserId = :userid AND PermId = :permid";
+        //for ($i = 0; $i < count($perm_id); $i++ ) {
+            $sql = "INSERT INTO user_perm (PermId, UserId, Authorized) VALUES (:permid, :userid, :authorized) ";
             
             $stmt = $this->database->prepare($sql);
-            $stmt->bindParam(":userid", $this->getUserId());
+            $stmt->bindParam(":userid", $userid);
             $stmt->bindParam(":permid", $perm);
+            $stmt->bindParam(":authorized", $authorized);
             
             $stmt->execute();
             
@@ -323,6 +335,26 @@ class user {
         
         
                  
+    }
+    
+    public function checkEmail(string $email) 
+    {
+        $db = new Database();
+        $this->database = $db->connect();
+        
+        $sql = "SELECT Email FROM users WHERE Email = :email";
+        $stmt = $this->database->prepare($sql);
+        $stmt->bindParam(":email", $email);
+        
+        $stmt->execute();
+        $count = $stmt->rowCount();
+        
+        // if only one email is found return true, else something is wrong
+        if ( $count == 1 ) {
+            return true;
+        } else {
+            return false;
+        }
     }
     
     public function updateBasicInformation(string $password = null) 
