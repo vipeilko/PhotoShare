@@ -5,10 +5,9 @@
     			<div class="subitem secondsubitem currentusers">
     			<span class="subitemheader">current users</span>
     				<select name="userlist" id="userlist" size="21">
-    					<option value="0">add user</option>
-    					<option disabled>───────────────</option>
+
     				</select>
-    				<input id="submitRemoveUsers" type="submit" value="delete selected user">
+    				<input id="submitRemoveUser" type="submit" value="delete selected user">
     			</div>
     			
     			<div class="subitem secondsubitem adduser edituser">

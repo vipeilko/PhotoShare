@@ -16,13 +16,16 @@
     <title>PhotoShare</title>
     <link rel="stylesheet" href="css/style.css">
     <link href="https://fonts.googleapis.com/css?family=Arvo&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/themes/smoothness/jquery-ui.css">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
 	<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
     <script src="js/aclient.js"></script>
 </head>
 
 <body>
-
+<div id="confirmation" title="confirmation">
+	Confirmation?
+</div>
 <div class="container"><!-- container -->
 	<div class="item left">
 		<div class="subitem tools">

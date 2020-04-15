@@ -20,6 +20,16 @@ var userpermissions = null;								// Stores userpermissions
 //Document loaded
 $(document).ready(function() {
 	
+	$('#confirmation').dialog({
+		resizable: false,
+		autoOpen: false,
+		modal: true,
+		show : {
+			effect : "bounce",
+			duration : 500
+		}
+	});
+	
 	console.log(sessionStorage.getItem('accessToken')); // debug
 	console.log(sessionStorage.getItem('refreshToken')); // debug
 
@@ -104,7 +114,7 @@ function postToApi(dataToPost) {
 
 		// if requested function is validateRefreshToken use refreshtoken instead
 		if ( dataToPost.hasOwnProperty('serviceName') )  {
-			console.log("Service name: " + dataToPost.serviceName);
+			console.log("Service name: " + dataToPost.serviceName); // debug servicename
 			if ( !(dataToPost.serviceName == "validateRefreshToken") ) {
 			authHeader = 'Bearer ' + sessionStorage.getItem('accessToken');
 			} else {
@@ -132,6 +142,7 @@ function postToApi(dataToPost) {
 			if (data.hasOwnProperty('response') ) {
 				code = data.response.status;
 				if ( data.response.message == null ) return;
+				
 				// getUserPermById
 				if ( data.response.message.hasOwnProperty('permissions') ) {
 					userpermissions = data;
@@ -152,16 +163,18 @@ function postToApi(dataToPost) {
 								
 							}
 							
-							console.log(subperm);
+							//console.log(subperm);
 						}
 						//console.log(data.response.message.users[user].firstname);
 						//$('#userlist').append('<option id="user' + userdata.response.message.users[user].id + '" value="' + userdata.response.message.users[user].id + '">' + userdata.response.message.users[user].firstname + ' ' + userdata.response.message.users[user].lastname + '</option>');
 					
 					}
+					return;
 				}
 				
-				//Only when roles
-				//if ( data.hasOwnProperty('role') ) {
+				// Admin interface "dynamic" menu
+				// Only when roles
+				// if ( data.hasOwnProperty('role') ) {
 				if ( data.response.message.hasOwnProperty('role') ) {
 					if ( data.response.message.role.hasOwnProperty('user') ) {
 						//show user
@@ -176,62 +189,14 @@ function postToApi(dataToPost) {
 						//show event
 						$('#event').show();
 					}
+					return;
 				}
 				
 				// getUsers
 				if ( data.response.message.hasOwnProperty('users') ) {
-					//save userdata
-					userdata = data;
-					// load users to list
-					for (let user of Object.keys(userdata.response.message.users)) {
-						//console.log(user);
-						//console.log(data.response.message.users[user].firstname);
-						$('#userlist').append('<option id="user' + userdata.response.message.users[user].id + '" value="' + userdata.response.message.users[user].id + '">' + userdata.response.message.users[user].firstname + ' ' + userdata.response.message.users[user].lastname + '</option>');
-					
-					}
-
-					let clickCount = 0;
-					$('#userlist').on('click', function () {
-						
-						if ( $('#userlist').children("option:selected").val() != 0 ) {
-							clickCount++;
-							
-							// change button
-							if ( clickCount == 1) {
-								$('#submitCreateUser').toggle();
-								$('#submitEditUser').toggle();
-							}
-							
-							// Fill form with selected user information
-							$('input#firstname').val(userdata.response.message.users[$('#userlist').children("option:selected").val()].firstname);
-							$('input#lastname').val(userdata.response.message.users[$('#userlist').children("option:selected").val()].lastname);
-							$('input#email').val(userdata.response.message.users[$('#userlist').children("option:selected").val()].email);
-
-							// generate payload to request user permissions from API
-							dataToPost = 
-							{
-									"serviceName":"getUserPermById",
-									"param":{
-										"userid":$('#userlist').children("option:selected").val()
-									}
-							};
-							// post permission request to API
-							postToApi(dataToPost);
-						} else {
-							
-							// if first of the list 'add user' is selected value is 0
-							// clear all input fields with type text
-							$('.edituser input:text').val("");
-							// clear checkbox selections
-							$('.edituser input:checkbox').attr('checked', false);
-							
-							if( clickCount != 0 ) {
-								$('#submitCreateUser').toggle();
-								$('#submitEditUser').toggle();
-							}
-							clickCount = 0;
-						}
-					});
+					//pass data to handler
+					getUsersResponse(data);
+					return;
 				}
 				
 			} else if (data.hasOwnProperty('error')) {
@@ -249,7 +214,7 @@ function postToApi(dataToPost) {
 				 
 				case 200:
 					// handle ok responses here
-					// a new switch case
+					// a new switch case?
 					
 				// refresh token updated
 					break;
@@ -282,6 +247,7 @@ function postToApi(dataToPost) {
 				case 103:
 				//username error
 				case 112:
+					
 				//password error
 				case 113:
 				//highlight all empty fields for few seconds
@@ -315,6 +281,7 @@ function postToApi(dataToPost) {
 	}) //end ajax
 } //end postToApi
 
+
 /*
  * 
  */
@@ -328,17 +295,6 @@ function validateRefreshToken() {
 	};
 	
 	postToApi(data);
-/*	if (ans) {
-		//if refreshtoken is still valid lets set new access and refreshtokens
-		if (ans.response.message.accessToken && ans.response.message.refreshToken) {
-			
-			sessionStorage.setItem('accessToken', ans.response.message.accessToken);
-			sessionStorage.setItem('refreshToken', ans.response.message.refreshToken);
-
-		} else {
-			//not recieving access and refrestokens
-		}
-	}*/
 }
 
 /**
@@ -355,22 +311,126 @@ function doLogout() {
  * 
  * @returns
  */
+function getUsers() {
+	dataToPost = 
+	  {
+				"serviceName":"getUsers",
+				"param":{
+					"parametri":"juu"
+				}
+	  };
+	  postToApi(dataToPost);
+}
 
-//TODO: continue from here
-function addUser() {
+/**
+ * getUsersResponse
+ * 
+ * @param data
+ * @returns
+ */
+function getUsersResponse(data) {
+	//save userdata
+	userdata = data;
+	// load users to list
+	// first empty list and set defaults
+	$('#userlist').html('<option value="0">add user</option><option disabled>───────────────</option>');
+	for (let user of Object.keys(userdata.response.message.users)) {
+		//console.log(user);
+		//console.log(data.response.message.users[user].firstname);
+		$('#userlist').append('<option id="user' + userdata.response.message.users[user].id + '" value="' + userdata.response.message.users[user].id + '">' + userdata.response.message.users[user].firstname + ' ' + userdata.response.message.users[user].lastname + '</option>');
+	
+	}
+
+	let clickCount = 0; // counts click on userlist to toggle edit/create button
+	$('#userlist').on('click', function () {
+		
+		if ( $('#userlist').children("option:selected").val() != 0 ) {
+			clickCount++;
+			
+			// change button
+			if ( clickCount == 1) {
+				$('#submitCreateUser').toggle();
+				$('#submitEditUser').toggle();
+			}
+			
+			// Fill form with selected user information
+			$('input#firstname').val(userdata.response.message.users[$('#userlist').children("option:selected").val()].firstname);
+			$('input#lastname').val(userdata.response.message.users[$('#userlist').children("option:selected").val()].lastname);
+			$('input#email').val(userdata.response.message.users[$('#userlist').children("option:selected").val()].email);
+
+			// get permissions
+			getPermissionByUserId($('#userlist').children("option:selected").val());
+
+		} else {
+			// if first of the list 'add user' is selected value is 0
+			// clear all input fields with type text
+			$('.edituser input:text').val("");
+			// clear checkbox selections
+			$('.edituser input:checkbox').attr('checked', false);
+			
+			if( clickCount != 0 ) {
+				$('#submitCreateUser').toggle();
+				$('#submitEditUser').toggle();
+			}
+			clickCount = 0;
+		}
+	});
+	
+}
+
+/**
+ * 
+ * @param id
+ * @returns
+ */
+function getPermissionByUserId(id) {
+	// generate payload to request user permissions from API
+	dataToPost = 
+	{
+			"serviceName":"getUserPermById",
+			"param":{
+				"userid":id
+			}
+	};
+	// post permission request to API
+	postToApi(dataToPost);
+}
+
+/**
+ * 
+ * @param id
+ * @returns
+ */
+function deleteUser(id) {
+	$('#confirmation').html("Are you sure to delete selected user?");
+	$('#confirmation').dialog( {
+		title : "Confirm delete user",
+		buttons : {
+			"Delete" : function() {
+				let data = 
+				{
+						"serviceName":"deleteUser",
+						"param":{
+							"userid":id
+						}
+				};
+				postToApi(data);
+				$(this).dialog("close");
+				setTimeout(getUsers, 1000)
+			},
+			"Cancel" : function() {
+				$(this).dialog("close");
+			}
+		}
+	})
+	$("#confirmation").dialog("open");
+	
+}
+
+
+function collectPermsAndPostToApi(sendPerm) {
 	let tempPerm;
 	let tempObj = {};
-	let sendPerm = {
-  				"serviceName":"addUser",
-  				"param":{
-  					"userid":$('#userlist').children("option:selected").val(),
-  					"firstname":$('#firstname').val(),
-  					"lastname":$('#lastname').val(),
-  					"email":$('#email').val(),
-  					"password":$('#password').val(),
-  					"retypepassword":$('#retypepassword').val()
-  				}
-		};		
 	
 	$('#permissions input').each(function() {
 		if (this.id != "" ) {
@@ -400,8 +460,40 @@ function addUser() {
 
 	});
 	
-	console.log(JSON.stringify(sendPerm));
+	//console.log(JSON.stringify(sendPerm)); //debug
 	postToApi(sendPerm);
+}
+/**
+ * 
+ * @returns
+ */
+function addUser() {
+	$('#confirmation').html("Do you want to create a new user?");
+	$('#confirmation').dialog( {
+		title : "Confirm creating new user",
+		buttons : {
+			"Create" : function() {
+	let sendPerm = {
+  				"serviceName":"addUser",
+  				"param":{
+  					"userid":$('#userlist').children("option:selected").val(),
+  					"firstname":$('#firstname').val(),
+  					"lastname":$('#lastname').val(),
+  					"email":$('#email').val(),
+  					"password":$('#password').val(),
+  					"retypepassword":$('#retypepassword').val()
+  				}
+		};
+	collectPermsAndPostToApi(sendPerm);
+	$(this).dialog("close");
+			},
+			"Cancel" : function() {
+				$(this).dialog("close");
+			}
+		}
+	})
+	$("#confirmation").dialog("open");
+	getUsers();
 }
 
 /**
@@ -409,11 +501,12 @@ function addUser() {
  * @returns
  */
 function editUser() {
-	let tempPerm;
-	let tempObj = {};
+	/*let tempPerm;
+	let tempObj = {};*/
 	/*let sendPerm = { 
 			permissions:[{}]
 	};*/
+	
 	let sendPerm = {
   				"serviceName":"editUser",
   				"param":{
@@ -424,9 +517,11 @@ function editUser() {
   					"password":$('#password').val(),
   					"retypepassword":$('#retypepassword').val()
   				}
-		};		
+		};
+	collectPermsAndPostToApi(sendPerm);
 	
-	$('#permissions input').each(function() {
+	
+	/*$('#permissions input').each(function() {
 		if (this.id != "" ) {
 			if ( this.checked ) {
 				tempPerm = this.id.split("_", 3);
@@ -455,10 +550,12 @@ function editUser() {
 	});
 	
 	console.log(JSON.stringify(sendPerm));
-	postToApi(sendPerm);
+	postToApi(sendPerm);*/
 }
 
 /**
+ * loadpage loads new content from template, api and defines all needed events on pages
+ * 
  * 
  * @param page
  * @returns
@@ -476,15 +573,11 @@ function loadpage(page){
 	      if( page == 'users.php' ) {
 	    	  $('#submitEditUser').click(function() { editUser() });
 	    	  $('#submitCreateUser').click(function() { addUser() });
+	    	  $('#submitRemoveUser').click(function() { deleteUser($('#userlist').children("option:selected").val())} );
 	    	  
-	    	  dataToPost = 
-	    	  {
-	    				"serviceName":"getUsers",
-	    				"param":{
-	    					"parametri":"juu"
-	    				}
-	    	  };
-	    	  postToApi(dataToPost);
+	    	  $('#userlist').children("option:selected").val()
+	    	  
+	    	  getUsers();
 	    	  
 	      }
 	      
