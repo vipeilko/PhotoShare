@@ -273,6 +273,34 @@ class user {
         return("User permissions updated successfully!");
         
     }
+    /**
+     * Deletes user == disables from database
+     * 
+     * 
+     */
+    public function delete() {
+        
+        try {
+            $disabled = 1;
+            $db = new Database();
+            $this->database = $db->connect();
+            
+            $sql = "UPDATE users SET Disabled = :disabled WHERE Id = :userid";
+            
+            $stmt = $this->database->prepare($sql);
+            $stmt->bindParam(":disabled", $disabled);
+            $stmt->bindParam(":userid", $this->userId);
+            
+            
+            $stmt->execute();
+            
+            //$stmt->debugDumpParams(); //debug
+            return true;
+
+        } catch (Exception $e) {
+            return false;
+        }
+    }
     
     public function addUser($password) {
         

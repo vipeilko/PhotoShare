@@ -70,6 +70,7 @@ class Rest
                 $this->getUserPermById();
                 break;
             // list all authorization needed services here
+            case "deleteUser":
             case "addUser":
             case "editUser":
             case "getUsers":

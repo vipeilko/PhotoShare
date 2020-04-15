@@ -95,6 +95,22 @@ class Api extends Rest
         echo ("Authorization ok.");
     }
     
+    public function deleteUser() {
+        // check if user has permission to add users
+        if ( !$this->user->checkPrivilige(PERM_USER, PERM_DESCR_DELETE_USER) ) {
+            $this->throwException(USER_HAS_NO_RIGHT, "User has no right to delete user");
+        }
+
+        $tempUser = new User();
+        $tempUser->setUserId($this->param['userid']);
+
+        if ( !$tempUser->delete() ) {
+            $this->throwException(USER_IS_DISABLED, "User is no longer available or it's already deleted");
+        }
+        $tempUser = null;
+        $this->response(SUCCESS_RESPONSE, "User deleted");
+    }
+    
     /**
      * addUser
      * 
@@ -121,7 +137,7 @@ class Api extends Rest
         }
         
         $tempUser = new User();
-        //$tempUser->setUserId($this->param['userid']);
+        
         $tempUser->setFirstName($this->param['firstname']);
         $tempUser->setLastName($this->param['lastname']);
         $tempUser->setEmail($this->param['email']);
