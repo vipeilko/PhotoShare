@@ -65,7 +65,12 @@ $(document).ready(function() {
 	if ( $("#main").length ) {
 		$("#main").click(function () { loadpage('main.php') });	
 	}
-	
+	if ( $("#event").length ) {
+		$("#event").click(function () { loadpage('events.php') });	
+	}	
+	if ( $("#code").length ) {
+		$("#code").click(function () { loadpage('code.php') });	
+	}
 });
 
 
@@ -416,7 +421,9 @@ function deleteUser(id) {
 				};
 				postToApi(data);
 				$(this).dialog("close");
-				setTimeout(getUsers, 1000)
+				// let deletion request complete before refreshing users list
+				// there is probably better ways to do this, but this is simple
+				setTimeout(getUsers, 1000);
 			},
 			"Cancel" : function() {
 				$(this).dialog("close");
@@ -486,6 +493,9 @@ function addUser() {
 		};
 	collectPermsAndPostToApi(sendPerm);
 	$(this).dialog("close");
+	// let add request complete before refreshing users list
+	// there is probably better ways to do this, but this is simple
+	setTimeout(getUsers, 1000);
 			},
 			"Cancel" : function() {
 				$(this).dialog("close");

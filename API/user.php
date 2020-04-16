@@ -210,7 +210,8 @@ class user {
     }
     
     
-    public function setUserInformation() {
+    public function setUserInformation() 
+    {
         
     }
     
@@ -278,7 +279,8 @@ class user {
      * 
      * 
      */
-    public function delete() {
+    public function delete() 
+    {
         
         try {
             $disabled = 1;
@@ -302,7 +304,8 @@ class user {
         }
     }
     
-    public function addUser($password) {
+    public function addUser($password) 
+    {
         
         $passwordHash = password_hash($password, PASSWORD_ARGON2ID, ['cost' => PASSWORD_COST]);
         $password = null;
