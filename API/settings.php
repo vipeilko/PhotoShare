@@ -168,8 +168,14 @@ $error_messages = array (
  * Success responses
  * 
  */
-define('SUCCESS_RESPONSE'               , 200);
-define('SUCCESS_UPDATE_REFRESH_TOKEN'   , 201);
+define('SUCCESS_RESPONSE',                  200);
+define('SUCCESS_UPDATE_REFRESH_TOKEN',      201);
+
+
+
+define('QR_SUCCESS_PROCESS_IMAGES',             220);
+define('QR_SUCCESS_GET_USED_HASHES',            221);
+
 
 
 

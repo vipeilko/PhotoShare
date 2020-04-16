@@ -8,30 +8,32 @@
  * + 27.02.2020 Performance test, and generate hash (all the times are clocked on extremely slow hardware, less than 1000p in passmark)
  * + 28.02.2020 Introduction of processImages. 
  * + 05.03.2020 Generating qr-code images png
+ * + 16.04.2020 Integration with api started
  * 
  */
-require "../vendor/autoload.php";
-require('settings.php');
-require('database.php');
+
+// These three require are needed only when standalon
+//require "../vendor/autoload.php"; 
+//require('settings.php');
+//require('database.php');
 
 use Zxing\QrReader;
 use Endroid\QrCode\QrCode;
 use Endroid\QrCode\ErrorCorrectionLevel;
 
 
-//TODO: extends api
-
-class qr {
+class qr extends Api {
     
     public $database;
     protected array $qrHash; // not needed if used db queries instead
     public array $qrCodes;
     public $qrText;
     
+    protected $usedHashes;
+    
     public function __construct() 
     {
 
-        
     }
     
     /**
@@ -215,7 +217,7 @@ class qr {
     
     public function insertImageToDb() 
     {
-        // this is donw in processImages
+        // this is now in processImages
     }
     
     /**
@@ -252,13 +254,15 @@ class qr {
         
         //before start processing images estimating time to accomplish and +50% 
         set_time_limit( $numberOfImages * PROCESS_TIME_OF_ONE_IMAGE * 1.5 );
-        echo ("Estimated time to execute is: " . ($numberOfImages * PROCESS_TIME_OF_ONE_IMAGE * 1.5) . " seconds <br>\n"); //debug
+        // echo ("Estimated time to execute is: " . ($numberOfImages * PROCESS_TIME_OF_ONE_IMAGE * 1.5) . " seconds <br>\n"); //debug
         $db = new Database();
         $this->database = $db->connect();
+        
         // Start processing
+        $i = 0;
         foreach ($temp as $item) {
             $path = pathinfo($item['name']);
-            print_r ($path); //debug
+            // print_r ($path); //debug
             //resizeImage($image, $width = MEDIUM_IMAGE_MAX_WIDTH, $height = MEDIUM_IMAGE_MAX_HEIGHT, $subpath = IMG_SUBPATH_MEDIUM, $quality = JPEG_QUALITY) 
             $fullSize = $this->resizeImage($path['dirname'] ."/". $path['basename'], FULL_SIZE_IMAGE_MAX_WIDTH, FULL_SIZE_IMAGE_MAX_HEIGHT, IMG_SUBPATH_FULL_SIZE);
             $mediumSize = $this->resizeImage($fullSize);
@@ -267,9 +271,10 @@ class qr {
             $qrText = $this->readQrCodeFromImage($mediumSize);
             
             // collect hash from captured URL
-            echo ("QRTEXT: " . $qrText. "\n");
+            //echo ("QRTEXT: " . $qrText. "\n");
             preg_match('/(?<=\/album\/)[a-zA-Z0-9]{1,50}/', $qrText, $matches);
             //print_r($matches);
+                
                 //if problems with regular expression use this simple explode
                 //$parsedHash = explode('/album/', $qrText);
                 //$matches = $parsedHash[1];
@@ -303,7 +308,7 @@ class qr {
                     //$this->throwException(DATABASE_ERROR, "Database select error.");
                 }   
             }
-            //we have to rename image, include hash in picture
+            //we have to rename image, include hash in image name
             rename($fullSize,       IMAGE_STORAGE_PATH .    IMG_SUBPATH_FULL_SIZE . $imgbelongstocode . "_" . $path['basename']);
             rename($mediumSize,     IMAGE_STORAGE_PATH .    IMG_SUBPATH_MEDIUM .    $imgbelongstocode . "_" . $path['basename']);
             rename($thumbnail,      IMAGE_STORAGE_PATH .    IMG_SUBPATH_THUMBNAIL . $imgbelongstocode . "_" . $path['basename']);
@@ -335,7 +340,7 @@ class qr {
                 
             } catch (Exception $e) {
                 //TODO: uncomment when integratin with API
-                //$this->throwException(DATABASE_ERROR, "Database insert error.");
+                $this->throwException(DATABASE_ERROR, "Database insert error.");
             }
             
             // if KEEP_ORIGINAL_PHOTO is true let's move it to IMG_SUBPATH_ORIGINAL folder, otherwise delete it
@@ -346,14 +351,48 @@ class qr {
             } else {
                 unlink ( $path['dirname'] ."/". $path['basename'] );
             }
-        
-            //TODO: return 201 ok so client knows to ask processing new images again
             
+            $i++;
         } // END processing / end foreach
+        
+        // returns 220 so client knows to ask more
+        $this->response(QR_SUCCESS_PROCESS_IMAGES, $i . " image(s) were processed");
         
         $db->disconnect();
         //TODO: Save to db information from last used HasId and/or hash 
         
+    }
+    
+    /**
+     * getUsedHashes
+     * 
+     * @param number $limit_start
+     * @param number $limit_end
+     */
+    public function getUsedHashes($limit_start = 0, $limit_end = 100) 
+    {
+        $db = new Database();
+        $this->database = $db->connect();
+        
+        try {
+            $sql = ("SELECT DISTINCT h.Hash, h.CreatedOn FROM hash h, images i WHERE i.HashId = h.Id ORDER BY ModDate desc LIMIT :start, :end");
+            
+            $stmt = $this->database->prepare($sql);
+            $stmt->bindParam(":stat", $limit_start);
+            $stmt->bindParam(":end", $limit_end);
+            
+            $stmt->execute();
+            
+            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                $this->usedHashes['hash'][$row['Hash']]['hash'] = $row['Hash'];
+                $this->usedHashes['hash'][$row['Hash']]['createdon'] = $row['CreatedOn'];
+            }
+            
+            $this->response(QR_SUCCESS_GET_USED_HASHES, $this->usedHashes);
+        } catch (Exception $e) {
+            $this->ThrowException(DATABASE_ERROR, $e);
+        }
+         
     }
     
     function cmpImgTime($element1, $element2) 
