@@ -55,7 +55,7 @@ body {
 	margin-left: 25px;
 }
 
-.adduser input[type=text], .adduser input[type=password] {
+.adduser input[type=text], .adduser input[type=password], input[type=number] {
 	height: 20px;
 	width: 225px;
 	border: none;
@@ -73,7 +73,7 @@ body {
 	margin-bottom: 5px;
 }
 
-#userlist {
+.list {
 	padding: 2px;
 	border: none;
 	overflow: hidden;
@@ -82,7 +82,12 @@ body {
 	font-size: 20px;
 }
 
-#submitRemoveUser, #submitEditUser, #submitCreateUser {
+#unusedcodelist, #usedcodelist {
+	overflow: auto;
+}
+
+/*#submitRemoveUser, #submitEditUser, #submitCreateUser {*/
+input[type=submit] {
 	border: 1px solid #17242a;
 	background-color: Transparent;
 	outline: none;
@@ -96,7 +101,8 @@ body {
 	display: none;
 }
 
-#submitRemoveUser:hover, #submitEditUser:hover, #submitCreateUser:hover {
+/*#submitRemoveUser:hover, #submitEditUser:hover, #submitCreateUser:hover {*/
+input[type=submit]:hover {
 	color: #def2f1;
 	border: 1px solid #def2f1;	
 }

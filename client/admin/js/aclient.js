@@ -94,6 +94,25 @@ $(document).ajaxStop(function() {
 			//refreshtoken updated, let's do what we meant to do
 			postToApi(dataToPostAfterRefreshingTokens);			
 			break;
+			
+		case 221:
+			// Get used codes
+			
+			break;
+		case 222:
+			// Get unused codes
+			
+			break;
+		case 223:
+			// Generate codes
+			// refresh list after new codes are generated
+			getUnusedCodes();
+			break;
+		case 224:
+			// Clear unused codes
+			//refres list after codes are cleared
+			getUnusedCodes();
+			break;
 		case 666:
 			break;
 			
@@ -146,7 +165,9 @@ function postToApi(dataToPost) {
 			//determine which type is response/error/warning
 			if (data.hasOwnProperty('response') ) {
 				code = data.response.status;
-				if ( data.response.message == null ) return;
+				//if ( data.response.message == null ) return;
+				if ( !(data.response.message == null) ) {
+				
 				
 				// getUserPermById
 				if ( data.response.message.hasOwnProperty('permissions') ) {
@@ -204,6 +225,8 @@ function postToApi(dataToPost) {
 					return;
 				}
 				
+			} // END IF NULL
+				
 			} else if (data.hasOwnProperty('error')) {
 				code = data.error.status;
 			} else if (data.hasOwnProperty('warning')) {
@@ -212,7 +235,7 @@ function postToApi(dataToPost) {
 				//there is no understandable reply
 			}
 			
-			//console.log(code);
+			console.log("CODE: " + code);
 			
 			//lets read response
 			switch (code) {
@@ -221,9 +244,10 @@ function postToApi(dataToPost) {
 					// handle ok responses here
 					// a new switch case?
 					
-				// refresh token updated
+				
 					break;
 				case 201:
+					// refresh token updated
 					// if login credentials are ok and response 200, lets store given tokens
 					// other case with code 200 is when we are refreshing tokens with refreshtoken, still same procedure 
 						if (data.response.message.accessToken && data.response.message.refreshToken) {
@@ -236,8 +260,19 @@ function postToApi(dataToPost) {
 						}
 
 					break;
-				// AccessToken: Experied token
+				case 221:
+					// Used codes list
+					parseCodeListResponse(data, 'used');
+					
+					break;
+				case 222:
+					// Unused codes list
+					parseCodeListResponse(data, 'unused');
+					
+					break;
+
 				case 302:
+					// AccessToken: Experied token
 					//Save data that has failed to post because experied token
 					dataToPostAfterRefreshingTokens = dataToPost;
 					//refrestoken 
@@ -325,6 +360,31 @@ function getUsers() {
 				}
 	  };
 	  postToApi(dataToPost);
+}
+/**
+ * parseCodeListResponse
+ * 
+ * @param data response data
+ * @param type list type
+ * 
+ * parses response and adds data to elements
+ * 
+ */
+function parseCodeListResponse(data, type) {
+
+	if ( type == 'used') 
+		$('#usedcodelist').html('');
+	if ( type == 'unused') 
+		$('#unusedcodelist').html('');
+	if (data.response.message != null ) {
+		for (let hash of Object.keys(data.response.message.hash)) {
+			//console.log(hash);
+			if ( type == 'used') 
+				$('#usedcodelist').append('<option id="code_'+ hash +'" value="' + hash + '">' + hash + '</option>');
+			if ( type == 'unused') 
+				$('#unusedcodelist').append('<option id="code_'+ hash +'" value="' + hash + '">' + hash + '</option>');
+		}
+	}
 }
 
 /**
@@ -530,37 +590,58 @@ function editUser() {
 		};
 	collectPermsAndPostToApi(sendPerm);
 	
-	
-	/*$('#permissions input').each(function() {
-		if (this.id != "" ) {
-			if ( this.checked ) {
-				tempPerm = this.id.split("_", 3);
-				let header = tempPerm[0];
-				let descr = tempPerm[1];
-	//			console.log("Header: " + header + " descr: " + descr);
-				tempObj = 
-				{
-					"param":{
-						"permissions": {
-							[header]: {
-				                   [descr]: {
-				                       "permid": tempPerm[2],
-				                       "authorized": "1"
-				                   }
-				            }
-						}
-					}
-				};
+}
 
-				$.extend(true, sendPerm, tempObj, sendPerm);
-				//sendPerm = tempObj2;
-			} //END IF ELSE HERE
-		}
-		
-	});
-	
-	console.log(JSON.stringify(sendPerm));
-	postToApi(sendPerm);*/
+function getUnusedCodes() {
+	let sendPerm = {
+			"serviceName":"getUnusedCodes",
+			"param":{
+				"start": 0,
+				"end": 100
+			}
+	}
+	postToApi(sendPerm);
+}
+
+function getUsedCodes() {
+	let sendPerm = {
+			"serviceName":"getUsedCodes",
+			"param":{
+				"start": 0,
+				"end": 100
+			}
+	}
+	postToApi(sendPerm);
+}
+
+function generateCodes(number) {
+	let sendPerm = {
+			"serviceName":"generateCodes",
+			"param":{
+				"ammount": number
+			}
+	}
+	postToApi(sendPerm);
+}
+
+function clearUnusedCodes(number) {
+	let sendPerm = {
+			"serviceName":"clearUnusedCodes",
+			"param":{
+				"disabled": 0
+			}
+	}
+	postToApi(sendPerm);	
+}
+
+function printUnusedCodes() {
+	let sendPerm = {
+			"serviceName":"printUnusedCodes",
+			"param":{
+				"disabled": 0
+			}
+	}
+	postToApi(sendPerm);	
 }
 
 /**
@@ -580,15 +661,26 @@ function loadpage(page){
 	      $('#rightcontainer').html("");
 	      $('#rightcontainer').html(data);
 	      
-	      if( page == 'users.php' ) {
-	    	  $('#submitEditUser').click(function() { editUser() });
-	    	  $('#submitCreateUser').click(function() { addUser() });
-	    	  $('#submitRemoveUser').click(function() { deleteUser($('#userlist').children("option:selected").val())} );
-	    	  
-	    	  $('#userlist').children("option:selected").val()
-	    	  
-	    	  getUsers();
-	    	  
+	      switch (page) {
+	    	  case 'users.php':
+	    		  $('#submitEditUser').click(function() { editUser() });
+		    	  $('#submitCreateUser').click(function() { addUser() });
+		    	  $('#submitRemoveUser').click(function() { deleteUser($('#userlist').children("option:selected").val())} );
+		    	  
+		    	  $('#userlist').children("option:selected").val()
+		    	  
+		    	  getUsers();
+	    		  break;
+	    	  case 'code.php':
+	    		  getUsedCodes();
+	    		  getUnusedCodes();
+	    		  $('#submitGenerate').click(function() { generateCodes($('#numberOfNewCodes').val()) });
+	    		  $('#submitClearUnused').click(function() { clearUnusedCodes(0) });
+	    		  $('#submitPrintUnusedCodes').click(function() { printUnusedCodes() });
+	    		  
+	    		  break;
+	    	 default:
+	    		 break;
 	      }
 	      
 	    }

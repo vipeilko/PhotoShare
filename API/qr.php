@@ -9,6 +9,7 @@
  * + 28.02.2020 Introduction of processImages. 
  * + 05.03.2020 Generating qr-code images png
  * + 16.04.2020 Integration with api started
+ * + 24.04.2020 get/generate/clear/print codes
  * 
  */
 
@@ -29,21 +30,25 @@ class qr extends Api {
     public array $qrCodes;
     public $qrText;
     
-    protected $usedHashes;
+    protected array $hash;
     
     public function __construct() 
     {
-
+       
     }
     
     /**
      * generateQrCodes
      * 
+     * @param number $userid
      * @param number $numberofhash
      * @param number $fatherId
      * @return boolean
+     * 
+     * generates codes and adds to database. Generates qr-images as well
+     * 
      */
-    public function generateQrCodes($numberofhash = 10, $fatherId = 0, $qrCodeSize = QR_CODE_DEFAULT_SIZE) 
+    public function generateQrCodes($userid, $numberofhash = 10, $fatherId = 0, $qrCodeSize = QR_CODE_DEFAULT_SIZE) 
     {
         global $qrHash;
         // let's generate hash
@@ -80,10 +85,11 @@ class qr extends Api {
             $date = new DateTime();
             $createdOn = $date->format('Y-m-d H:i:s');
             $modDate = $createdOn;
+            // normal hash = 0, event = 1
             $hashType = 0;
             $disabled = 0;
-            //TODO: When integrating with api getUserid from db
-            $ownerId = 2;
+
+            $ownerId = $userid;
             
             //add each hash to db
             for ( $i = 1; $i <= count($this->$qrHash); $i++ ) {
@@ -369,30 +375,161 @@ class qr extends Api {
      * @param number $limit_start
      * @param number $limit_end
      */
-    public function getUsedHashes($limit_start = 0, $limit_end = 100) 
+    public function getUsedHash($userid, $disabled = 0, $limit_start = 0, $limit_end = 100) 
     {
         $db = new Database();
         $this->database = $db->connect();
         
         try {
-            $sql = ("SELECT DISTINCT h.Hash, h.CreatedOn FROM hash h, images i WHERE i.HashId = h.Id ORDER BY ModDate desc LIMIT :start, :end");
+            $sql = ("SELECT DISTINCT h.Hash, h.CreatedOn 
+                                    FROM hash h, 
+                                         images i 
+                                    WHERE 
+                                        i.HashId = h.Id AND 
+                                        h.OwnerId = :userid AND
+                                        h.Disabled = :disabled
+                                    ORDER BY h.Id desc 
+                                    LIMIT :start, :end");
             
             $stmt = $this->database->prepare($sql);
-            $stmt->bindParam(":stat", $limit_start);
-            $stmt->bindParam(":end", $limit_end);
+            $stmt->bindParam(":start",      $limit_start,   PDO::PARAM_INT);
+            $stmt->bindParam(":end",        $limit_end,     PDO::PARAM_INT);
+            $stmt->bindParam(":userid",     $userid,        PDO::PARAM_STR);
+            $stmt->bindParam(":disabled",   $disabled,      PDO::PARAM_STR);
             
             $stmt->execute();
-            
+
             while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-                $this->usedHashes['hash'][$row['Hash']]['hash'] = $row['Hash'];
-                $this->usedHashes['hash'][$row['Hash']]['createdon'] = $row['CreatedOn'];
+                $this->hash['hash'][$row['Hash']]['hash'] = $row['Hash'];
+               // $this->usedHashes['hash'][$row['Hash']]['createdon'] = $row['CreatedOn'];
+
+            }
+            return true;
+
+        } catch (Exception $e) {
+            $this->ThrowException(DATABASE_ERROR, "Virhe: " . $e);
+        }
+         
+    }
+    
+    public function getUnusedHash($userid, $disabled = 0, $limit_start = 0, $limit_end = 100)
+    {
+        $db = new Database();
+        $this->database = $db->connect();
+        
+        try {
+            $sql = ("SELECT h.Hash, h.CreatedOn 
+                                    FROM hash h 
+                                    WHERE h.Id 
+                                    NOT IN (
+                                        SELECT i.HashId 
+                                        FROM images i
+                                    ) AND 
+                                    h.OwnerId = :userid AND
+                                    h.Disabled = :disabled
+                                    ORDER BY h.Id desc 
+                                    LIMIT :start, :end");
+            
+            $stmt = $this->database->prepare($sql);
+            $stmt->bindParam(":start",      $limit_start,   PDO::PARAM_INT);
+            $stmt->bindParam(":end",        $limit_end,     PDO::PARAM_INT);
+            $stmt->bindParam(":userid",     $userid,        PDO::PARAM_STR);
+            $stmt->bindParam(":disabled",   $disabled,      PDO::PARAM_STR);
+            
+            $stmt->execute();
+
+            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                //echo ("i: " .$i. "\n");
+                $this->hash['hash'][$row['Hash']]['hash'] = $row['Hash'];
+               // $this->usedHashes['hash'][$row['Hash']]['createdon'] = $row['CreatedOn'];
+
             }
             
-            $this->response(QR_SUCCESS_GET_USED_HASHES, $this->usedHashes);
+            return true;
+
         } catch (Exception $e) {
             $this->ThrowException(DATABASE_ERROR, $e);
         }
-         
+        
+    }
+    
+    public function getHash()
+    {
+        return $this->hash;
+    }
+    
+    public function deleteUnusedCodes($userid, $disabled = 0) 
+    {
+        $db = new Database();
+        $this->database = $db->connect();
+        
+        try {
+            $sql = ("DELETE FROM hash WHERE Id NOT IN (SELECT HashId FROM images) AND OwnerId = :userid AND Disabled = :disabled");
+            
+            $stmt = $this->database->prepare($sql);
+            $stmt->bindParam(":userid",     $userid,        PDO::PARAM_STR);
+            $stmt->bindParam(":disabled",   $disabled,      PDO::PARAM_STR);
+            
+            $stmt->execute();
+            
+            return true;
+           
+        } catch (Exception $e) {
+            $this->ThrowException(DATABASE_ERROR, $e);
+        }
+        return false;
+    }
+    
+    public function createPdfFromUnusedCodes($userid)
+    {
+        $pdf = new TCPDF('P', 'px', 'A4', true, 'UTF-8', false);
+        
+        $pdf->SetCreator(PDF_CREATOR);
+        $pdf->SetAuthor('PhotoShare');
+        $pdf->SetTitle('QR Codes');
+        $pdf->SetSubject('QR Code');
+
+        $pdf->SetDefaultMonospacedFont(PDF_FONT_MONOSPACED);
+        
+        //margins
+        $pdf->SetMargins(PDF_MARGIN_LEFT, PDF_MARGIN_TOP, PDF_MARGIN_RIGHT);
+        $pdf->SetHeaderMargin(PDF_MARGIN_HEADER);
+        $pdf->SetFooterMargin(PDF_MARGIN_FOOTER);
+        
+        $pdf->SetAutoPageBreak(TRUE, PDF_MARGIN_BOTTOM);
+        
+        $pdf->AddPage();
+        
+        $pdf->setJPEGQuality(100);
+        
+        $this->getUnusedHash($userid);
+        
+        $hash = $this->getHash();
+        
+        print_r($hash['hash']);
+        
+        $margin = 10;
+        $default = 10;
+        $x = $default; 
+        $y = $default;
+        
+//        echo ("Count: " . count($hash));
+        // TODO: CONTINUE HERE for a proper layout
+//        for ( $i = 0; $i < count($hash['hash']); $i++ ) {
+        foreach ($hash['hash'] as $key => $value ) {
+            //echo ("Hash: " . $value['hash'] . "\n");
+            $pdf->Image(IMAGE_STORAGE_PATH.QR_CODE_IMAGE_PATH.$value['hash'].'.png', $x, $y, QR_CODE_DEFAULT_SIZE, QR_CODE_DEFAULT_SIZE, 'PNG', '', '', false, 300, '', false, false, 0, false, false, false);
+            for ( $k = 0; $k <= 1; $k++ ) {
+                $x = $x + $margin + QR_CODE_DEFAULT_SIZE;
+            }
+            $y = $y + $margin + QR_CODE_DEFAULT_SIZE;
+            $x = $default;
+            $k = 0;
+        }
+        ob_end_clean();
+        $pdf->Output('/var/www/html/PhotoShare/data/'.DATA_PATH.QR_PDF_PATH.'example_66.pdf', 'F');
+        
+        //$pdf->Output('example_66.pdf', 'I');
     }
     
     function cmpImgTime($element1, $element2) 
@@ -445,20 +582,20 @@ class qr extends Api {
     
 }
 
-$time_start = microtime(true);
-$koodit = new qr();
+//$time_start = microtime(true);
+//$koodit = new qr();
 //$koodit->performanceTest();
 //echo ($koodit->qrText);
-$koodit->generateQrCodes();
-print_r($koodit->$qrHash);
+//$koodit->generateQrCodes();
+//print_r($koodit->$qrHash);
 
 /*
 $koodit->processImages();
 */
 
-$time_end = microtime(true);
-$execution_time = ($time_end - $time_start);
-echo 'Total Execution Time: '.$execution_time.' seconds<br>';
+//$time_end = microtime(true);
+//$execution_time = ($time_end - $time_start);
+//echo 'Total Execution Time: '.$execution_time.' seconds<br>';
 
 
 

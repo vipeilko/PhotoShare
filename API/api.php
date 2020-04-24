@@ -15,14 +15,14 @@
  *  + 24.02.2020 Added password hashing using built-in password_hash function
  *  + 02.04.2020 New functions getRoles and getPermissions
  *  + 12.04.2020 add and edit user
+ *  + 24.04.2020 A proper introduction of codes
  *  
  */
 
 
 class Api extends Rest
 {
-
-
+    protected qr $qr;
     
     public $database;
 
@@ -30,6 +30,7 @@ class Api extends Rest
     public function __construct()
     {
         parent::__construct();
+        $this->qr = new qr();
 
     }
 
@@ -77,14 +78,70 @@ class Api extends Rest
         $this->generateTokens($this->user->getUserId(), 0, true);
         
     }
+    
     /**
      * 
      * 
      */
-    public function generateQrCodes() 
+    public function generateCodes() 
     {
-       
-        // return generated qrcodes in json and links to images
+        // check if user has permission to get codes
+        if ( !$this->user->checkPrivilige(PERM_CODE, PERM_DESCR_GENERATE_CODE) ) {
+            $this->throwException(USER_HAS_NO_RIGHT, "User has no right to generate codes");
+        }
+        $this->validateParameter('ammount', $this->param['ammount'], INTEGER);
+        
+        if ( !$this->qr->generateQrCodes($this->user->getUserid(), $this->param['ammount']) ) {
+            $this->throwException(QR_FAILED_GENERATE_CODES, "Failed to generate QR codes");
+        }
+        $this->response(QR_SUCCESS_CODE_GENERATED, "QR codes successfully generated");
+    }
+    
+    
+    public function getUsedCodes()
+    {
+        // check if user has permission to get codes
+        if ( !$this->user->checkPrivilige(PERM_CODE, PERM_DESCR_LABEL_CODE) ) {
+            $this->throwException(USER_HAS_NO_RIGHT, "User has no right to get used codes");
+        }
+        //$this->response(QR_SUCCESS_GET_USED_HASHES, $this->qr->getUsedHashes());
+        if ( !($this->qr->getUsedHash($this->user->getUserId())) ) {
+            $this->throwException(666, "jooo");
+        }
+        $this->response(QR_SUCCESS_GET_USED_HASHES, $this->qr->getHash());
+    }
+    
+    public function getUnusedCodes()
+    {
+        // check if user has permission to get codes
+        if ( !$this->user->checkPrivilige(PERM_CODE, PERM_DESCR_LABEL_CODE) ) {
+            $this->throwException(USER_HAS_NO_RIGHT, "User has no right to get unused codes");
+        }
+        //$this->response(QR_SUCCESS_GET_UNUSED_HASHES, $this->qr->getUsedHashes());
+        if ( !($this->qr->getUnusedHash($this->user->getUserId())) ) {
+            $this->throwException(666, "jooo");
+        }
+        $this->response(QR_SUCCESS_GET_UNUSED_HASHES, $this->qr->getHash());
+    }
+    
+    public function clearUnusedCodes() 
+    {
+        // check if user has permission to get codes
+        if ( !$this->user->checkPrivilige(PERM_CODE, PERM_DESCR_CLEAR_CODE) ) {
+            $this->throwException(USER_HAS_NO_RIGHT, "User has no right to clear unused codes");
+        }
+        $this->validateParameter('disabled', $this->param['disabled'], INTEGER, false);
+        
+        if ( !$this->qr->deleteUnusedCodes($this->user->getUserId()) ) {
+            $this->throwException(QR_FAILED_CLEAR_UNUSED, "Failed to clear unused hashes");
+        }
+        $this->response(QR_SUCCESS_CLEAR_UNUSED, "Successfully cleared unused hashes");
+    }
+    
+    public function printUnusedCodes() 
+    {
+        $this->qr->createPdfFromUnusedCodes($this->user->getUserId());
+        
     }
     
     /**

@@ -4,7 +4,7 @@
     		<div class="subitem content">
     			<div class="subitem secondsubitem currentusers">
     			<span class="subitemheader">current users</span>
-    				<select name="userlist" id="userlist" size="21">
+    				<select class="list" name="userlist" id="userlist" size="21">
 
     				</select>
     				<input id="submitRemoveUser" type="submit" value="delete selected user">

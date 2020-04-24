@@ -4,7 +4,6 @@
  * Security
  *
  * Here comes all security
- * TODO: watch
  */
 define('API_ACCESS_TOKEN_KEY', 'draYuTg32FFd8TFkdEMfVFHVtL9yhmVD4XJnSkFUkAH6VrMedmM2UND9jLkZk8NDUsZPauQFAUj8aKayGR2ZVEnQswW4tGJxLbKCsLR39ZPhKSNwjdy2R95DNsK5EEJqVM2TsPvBcXue8Jw6yGtnWCC43A6CpwaaPVd6Chs6wvy2H6vxGj3UtMRCKEsEk3CEEVhzVerdJreY9V6bdhQtg2dFksbqnSvhT64VKxYVWXJgvh6yruFjm5DVJUELstE7');
 define('API_REFRESH_TOKEN_KEY', 'xCzkcXKmH7nhCqgzLcP9WbJtBWgaw3MuJmVkBJV4zn78x2JVhZ8GVMNLngfLF8pZCNSym4YvFm2PyAzLy58hjQ3aVefYTHXYH8wzp3RukbM3FwHs4kTkCUv7BGU4cNtrxWTbWeTwmkDR7nxWKJMMHrmh5qvcvQubVKwc4sE8ZyzkBDLp9g5JWCsEXdWXS2k3wtKhAtSKwHTchvnAGgtvkZTLMZ42Gfqd5eketReZRDRbqTxdsWC8zeX6feB8JurG');
@@ -29,7 +28,9 @@ define('IMG_SUBPATH_ORIGINAL',        'original/'); // sub folder to store origi
 define('IMG_SUBPATH_FULL_SIZE',      'full-size/'); // sub folder to store full-size photos.
 define('IMG_SUBPATH_MEDIUM',            'medium/'); // sub folder to store medium photos.
 define('IMG_SUBPATH_THUMBNAIL',      'thumbnail/'); // sub folder to store thumbnail photos.
-define('QR_CODE_IMAGE_PATH',                'qr/');     
+define('QR_CODE_IMAGE_PATH',                'qr/');
+define('DATA_PATH',                    '../data/');
+define('QR_PDF_PATH',                      'pdf/');
 define('QR_CODE_URL_PREFIX', 'https://<your server here>/PhotoShare/album/'); // path must include /album/
 define('QR_CODE_DEFAULT_SIZE',                200); 
 define('QR_CODE_GENERATE_WITHOUT_PATH',      true); //default false
@@ -106,7 +107,6 @@ define('USER_PASSWORD',                  151);
 /*
  * Error Codes for rest API
  *
- *
  */
 
 define('REQUEST_METHOD_NOT_VALID',      100);
@@ -124,6 +124,10 @@ define('TOO_MANY_TOKENS',               111);
 define('VALIDATE_PARAMETER_EMAIL',      112);
 define('PASSWORD_NOT_COMPLEX_ENOUGH',   113);
 define('QR_CODE_DO_NOT_EXIST',          114);
+
+
+define('QR_FAILED_GENERATE_CODES',      120);
+define('QR_FAILED_CLEAR_UNUSED',        121);
 
 
 /**
@@ -175,7 +179,9 @@ define('SUCCESS_UPDATE_REFRESH_TOKEN',      201);
 
 define('QR_SUCCESS_PROCESS_IMAGES',             220);
 define('QR_SUCCESS_GET_USED_HASHES',            221);
-
+define('QR_SUCCESS_GET_UNUSED_HASHES',          222);
+define('QR_SUCCESS_CODE_GENERATED',             223);
+define('QR_SUCCESS_CLEAR_UNUSED',               224);
 
 
 

@@ -19,7 +19,7 @@
  *              asyncrounous ajax calls.
  *  + 02.4.2020 User class is now declared here for software wide use. Added user related functions.
  *  + 12.4.2020 Add and edit user
- *  
+ *  + 24.4.2020 get/generate/clear/print codes
  *  
  */
 use Firebase\JWT\JWT;
@@ -70,6 +70,11 @@ class Rest
                 $this->getUserPermById();
                 break;
             // list all authorization needed services here
+            case "printUnusedCodes":
+            case "clearUnusedCodes":
+            case "generateCodes":
+            case "getUnusedCodes":
+            case "getUsedCodes":
             case "deleteUser":
             case "addUser":
             case "editUser":
