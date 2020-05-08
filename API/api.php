@@ -107,8 +107,10 @@ class Api extends Rest
         //$this->response(QR_SUCCESS_GET_USED_HASHES, $this->qr->getUsedHashes());
         if ( !($this->qr->getUsedHash($this->user->getUserId())) ) {
             $this->throwException(666, "jooo");
+        } else {
+            $this->response(QR_SUCCESS_GET_USED_HASHES, $this->qr->usedHash());
         }
-        $this->response(QR_SUCCESS_GET_USED_HASHES, $this->qr->getHash());
+        $this->response(SUCCESS_RESPONSE, "ok");
     }
     
     public function getUnusedCodes()
@@ -120,8 +122,10 @@ class Api extends Rest
         //$this->response(QR_SUCCESS_GET_UNUSED_HASHES, $this->qr->getUsedHashes());
         if ( !($this->qr->getUnusedHash($this->user->getUserId())) ) {
             $this->throwException(666, "jooo");
+        } else {
+            $this->response(QR_SUCCESS_GET_UNUSED_HASHES, $this->qr->unusedHash());
         }
-        $this->response(QR_SUCCESS_GET_UNUSED_HASHES, $this->qr->getHash());
+        $this->response(SUCCESS_RESPONSE, "ok");
     }
     
     public function clearUnusedCodes() 
@@ -140,8 +144,10 @@ class Api extends Rest
     
     public function printUnusedCodes() 
     {
-        $this->qr->createPdfFromUnusedCodes($this->user->getUserId());
         
+        $filename = $this->qr->createPdfFromUnusedCodes($this->user->getUserId());
+        
+        $this->response(QR_PDF_GENERATED, $filename);
     }
     
     /**

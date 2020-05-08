@@ -23,16 +23,19 @@ define('PASSWORD_COST', 10);                // Defines complexity of password ca
 define('PROCESS_TIME_OF_ONE_IMAGE',             5); // Processing time of one image. From original to full-size, medium and thumbnail. Default 5
                                                     // You should run run performanceTest() in qr.php to see how long time is needed to resize and read codes
 define('LENGHT_OF_QR_CODE_HASH',                8); // Defines how many character is used in qr code hash. Default 8. Max 50. HASH is generated in bytes so length is estimated
+define('PHOTOSHARE_PATH', '/var/www/html/PhotoShare/');
 define('IMAGE_STORAGE_PATH',    '../data/images/'); // main image path
 define('IMG_SUBPATH_ORIGINAL',        'original/'); // sub folder to store original photos. Only needed if KEEP_ORIGINAL_PHOTO is true
 define('IMG_SUBPATH_FULL_SIZE',      'full-size/'); // sub folder to store full-size photos.
 define('IMG_SUBPATH_MEDIUM',            'medium/'); // sub folder to store medium photos.
 define('IMG_SUBPATH_THUMBNAIL',      'thumbnail/'); // sub folder to store thumbnail photos.
 define('QR_CODE_IMAGE_PATH',                'qr/');
+define('DATA_PATH_REAL',                  'data/');
 define('DATA_PATH',                    '../data/');
 define('QR_PDF_PATH',                      'pdf/');
 define('QR_CODE_URL_PREFIX', 'https://<your server here>/PhotoShare/album/'); // path must include /album/
-define('QR_CODE_DEFAULT_SIZE',                200); 
+define('QR_CODE_PDF_URL_PREFIX', 'http://192.168.1.4/PhotoShare/'.DATA_PATH_REAL.QR_PDF_PATH);
+define('QR_CODE_DEFAULT_SIZE',                150); 
 define('QR_CODE_GENERATE_WITHOUT_PATH',      true); //default false
 
 
@@ -172,17 +175,17 @@ $error_messages = array (
  * Success responses
  * 
  */
-define('SUCCESS_RESPONSE',                  200);
-define('SUCCESS_UPDATE_REFRESH_TOKEN',      201);
+define('SUCCESS_RESPONSE',                          200);
+define('SUCCESS_UPDATE_REFRESH_TOKEN',              201);
 
 
 
-define('QR_SUCCESS_PROCESS_IMAGES',             220);
-define('QR_SUCCESS_GET_USED_HASHES',            221);
-define('QR_SUCCESS_GET_UNUSED_HASHES',          222);
-define('QR_SUCCESS_CODE_GENERATED',             223);
-define('QR_SUCCESS_CLEAR_UNUSED',               224);
-
+define('QR_SUCCESS_PROCESS_IMAGES',                 220);
+define('QR_SUCCESS_GET_USED_HASHES',                221);
+define('QR_SUCCESS_GET_UNUSED_HASHES',              222);
+define('QR_SUCCESS_CODE_GENERATED',                 223);
+define('QR_SUCCESS_CLEAR_UNUSED',                   224);
+define('QR_PDF_GENERATED',                          225);
 
 
 /* Server Errors */

@@ -30,7 +30,8 @@ class qr extends Api {
     public array $qrCodes;
     public $qrText;
     
-    protected array $hash;
+    protected array $usedHash;
+    protected array $unusedHash;
     
     public function __construct() 
     {
@@ -400,7 +401,7 @@ class qr extends Api {
             $stmt->execute();
 
             while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-                $this->hash['hash'][$row['Hash']]['hash'] = $row['Hash'];
+                $this->usedHash['hash'][$row['Hash']]['hash'] = $row['Hash'];
                // $this->usedHashes['hash'][$row['Hash']]['createdon'] = $row['CreatedOn'];
 
             }
@@ -440,7 +441,7 @@ class qr extends Api {
 
             while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
                 //echo ("i: " .$i. "\n");
-                $this->hash['hash'][$row['Hash']]['hash'] = $row['Hash'];
+                $this->unusedHash['hash'][$row['Hash']]['hash'] = $row['Hash'];
                // $this->usedHashes['hash'][$row['Hash']]['createdon'] = $row['CreatedOn'];
 
             }
@@ -452,10 +453,21 @@ class qr extends Api {
         }
         
     }
-    
-    public function getHash()
+
+    public function unusedHash()
     {
-        return $this->hash;
+        if ( !empty($this->unusedHash) ) {
+            return $this->unusedHash;
+        }
+
+    }
+    
+    public function usedHash()
+    {
+        if ( !empty($this->usedHash) ) {
+            return $this->usedHash;
+        }
+        
     }
     
     public function deleteUnusedCodes($userid, $disabled = 0) 
@@ -480,6 +492,10 @@ class qr extends Api {
         return false;
     }
     
+    /**
+     * 
+     * @param unknown $userid
+     */
     public function createPdfFromUnusedCodes($userid)
     {
         $pdf = new TCPDF('P', 'px', 'A4', true, 'UTF-8', false);
@@ -496,7 +512,7 @@ class qr extends Api {
         $pdf->SetHeaderMargin(PDF_MARGIN_HEADER);
         $pdf->SetFooterMargin(PDF_MARGIN_FOOTER);
         
-        $pdf->SetAutoPageBreak(TRUE, PDF_MARGIN_BOTTOM);
+        //$pdf->SetAutoPageBreak(TRUE, PDF_MARGIN_BOTTOM);
         
         $pdf->AddPage();
         
@@ -504,31 +520,49 @@ class qr extends Api {
         
         $this->getUnusedHash($userid);
         
-        $hash = $this->getHash();
+        $hash = $this->unusedHash();
         
-        print_r($hash['hash']);
+        //print_r($hash['hash']);
         
-        $margin = 10;
-        $default = 10;
-        $x = $default; 
+        $margin = 30;
+        $default = 30;
+        $x = $default;
         $y = $default;
         
 //        echo ("Count: " . count($hash));
-        // TODO: CONTINUE HERE for a proper layout
+        // TODO: DO a proper layout
 //        for ( $i = 0; $i < count($hash['hash']); $i++ ) {
+        $i = 0; // rows
+        $k = 0; // lines
         foreach ($hash['hash'] as $key => $value ) {
-            //echo ("Hash: " . $value['hash'] . "\n");
-            $pdf->Image(IMAGE_STORAGE_PATH.QR_CODE_IMAGE_PATH.$value['hash'].'.png', $x, $y, QR_CODE_DEFAULT_SIZE, QR_CODE_DEFAULT_SIZE, 'PNG', '', '', false, 300, '', false, false, 0, false, false, false);
-            for ( $k = 0; $k <= 1; $k++ ) {
-                $x = $x + $margin + QR_CODE_DEFAULT_SIZE;
+            if ($i%3==0) {
+                $y = $y + $margin + QR_CODE_DEFAULT_SIZE;
+                $x = $default;
+                $i = 0;
+                $k++;
             }
-            $y = $y + $margin + QR_CODE_DEFAULT_SIZE;
-            $x = $default;
-            $k = 0;
+            // code without url
+            //$pdf->Image(IMAGE_STORAGE_PATH.QR_CODE_IMAGE_PATH.$value['hash'].'.png', $x, $y, QR_CODE_DEFAULT_SIZE, QR_CODE_DEFAULT_SIZE, 'PNG', '', '', false, 300, '', false, false, 0, false, false, false);
+            // code with url
+            $pdf->Image(IMAGE_STORAGE_PATH.QR_CODE_IMAGE_PATH.$value['hash'].'_url.png', $x, $y, QR_CODE_DEFAULT_SIZE, QR_CODE_DEFAULT_SIZE, 'PNG', '', '', false, 300, '', false, false, 0, false, false, false);
+            if ($k%3==0) {
+                $y = $default;
+                $x = $default;
+                $k = 0;
+                $pdf->AddPage();
+                $i--;
+            }
+            
+            $x = $x + $margin + QR_CODE_DEFAULT_SIZE;
+            $i++;
+            
         }
         ob_end_clean();
-        $pdf->Output('/var/www/html/PhotoShare/data/'.DATA_PATH.QR_PDF_PATH.'example_66.pdf', 'F');
+        $date = new DateTime();
+        $createdOn = $date->format('YmdHis');
+        $pdf->Output(PHOTOSHARE_PATH.'data/'.QR_PDF_PATH.$userid.'_'.$createdOn.'.pdf', 'F');
         
+        return QR_CODE_PDF_URL_PREFIX.$userid.'_'.$createdOn.'.pdf';
         //$pdf->Output('example_66.pdf', 'I');
     }
     

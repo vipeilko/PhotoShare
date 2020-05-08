@@ -19,7 +19,7 @@ var userpermissions = null;								// Stores userpermissions
 
 //Document loaded
 $(document).ready(function() {
-	
+	$('#loading').hide();
 	$('#confirmation').dialog({
 		resizable: false,
 		autoOpen: false,
@@ -73,6 +73,14 @@ $(document).ready(function() {
 	}
 });
 
+/**
+ * ajaxStart
+ * 
+ * @returns
+ */
+$(document).ajaxStart(function () {
+	$('#loading').show();
+});
 
 /**
  * ajaxStop
@@ -84,7 +92,7 @@ $(document).ready(function() {
  * @returns
  */
 $(document).ajaxStop(function() {
-	
+	$('#loading').hide();
 	//console.log("ajaxStop code: " + JSON.stringify(code)); //debug
 	switch (code) {
 		case 200:
@@ -112,6 +120,9 @@ $(document).ajaxStop(function() {
 			// Clear unused codes
 			//refres list after codes are cleared
 			getUnusedCodes();
+			break;
+		case 225:
+			// pdf creation finnished
 			break;
 		case 666:
 			break;
@@ -160,7 +171,7 @@ function postToApi(dataToPost) {
 		success: function(data) {
 			let str = JSON.stringify(data);
 			
-			console.log(str); //debug response
+			console.log("Response:" + str); //debug response
 			
 			//determine which type is response/error/warning
 			if (data.hasOwnProperty('response') ) {
@@ -268,6 +279,12 @@ function postToApi(dataToPost) {
 				case 222:
 					// Unused codes list
 					parseCodeListResponse(data, 'unused');
+					
+					break;
+				case 225: 
+					// pdf generation complete
+					// opens pdf-file to new tab
+				    window.open(data.response.message);
 					
 					break;
 

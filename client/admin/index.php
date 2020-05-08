@@ -23,6 +23,9 @@
 </head>
 
 <body>
+<div id="loading">
+	<img alt="loading" src="../content/loading.gif">
+</div>
 <div id="confirmation" title="confirmation">
 	Confirmation?
 </div>
