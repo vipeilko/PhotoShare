@@ -70,6 +70,8 @@ class Rest
                 $this->getUserPermById();
                 break;
             // list all authorization needed services here
+            case "getEventList":
+            case "eventFromHashId":
             case "printUnusedCodes":
             case "clearUnusedCodes":
             case "generateCodes":

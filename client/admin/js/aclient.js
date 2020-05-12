@@ -118,11 +118,16 @@ $(document).ajaxStop(function() {
 			break;
 		case 224:
 			// Clear unused codes
-			//refres list after codes are cleared
+			// refresh list after codes are cleared
 			getUnusedCodes();
 			break;
 		case 225:
 			// pdf creation finnished
+			break;
+		case 240:
+			// Event successfully generated
+			// refresh list after 
+			getUnusedCodes();
 			break;
 		case 666:
 			break;
@@ -287,7 +292,11 @@ function postToApi(dataToPost) {
 				    window.open(data.response.message);
 					
 					break;
-
+				case 241:
+					// event code list
+					parseCodeListResponse(data, 'event');
+					
+					break;
 				case 302:
 					// AccessToken: Experied token
 					//Save data that has failed to post because experied token
@@ -387,19 +396,23 @@ function getUsers() {
  * parses response and adds data to elements
  * 
  */
-function parseCodeListResponse(data, type) {
-
+function parseCodeListResponse(data, type) 
+{
 	if ( type == 'used') 
 		$('#usedcodelist').html('');
 	if ( type == 'unused') 
 		$('#unusedcodelist').html('');
+	if ( type == 'event') 
+		$('#eventlist').html('');
 	if (data.response.message != null ) {
 		for (let hash of Object.keys(data.response.message.hash)) {
-			//console.log(hash);
+			// console.log(hash); //debug
 			if ( type == 'used') 
-				$('#usedcodelist').append('<option id="code_'+ hash +'" value="' + hash + '">' + hash + '</option>');
+				$('#usedcodelist').append('<option id="code_'+ data.response.message.hash[hash].hash +'" value="' + data.response.message.hash[hash].id + '">' + data.response.message.hash[hash].hash + '</option>');
 			if ( type == 'unused') 
-				$('#unusedcodelist').append('<option id="code_'+ hash +'" value="' + hash + '">' + hash + '</option>');
+				$('#unusedcodelist').append('<option id="code_'+ data.response.message.hash[hash].hash +'" value="' + data.response.message.hash[hash].id + '">' + data.response.message.hash[hash].hash + '</option>');
+			if ( type == 'event' ) 
+				$('#eventlist').append('<option id="code_'+ data.response.message.hash[hash].hash +'" value="' + data.response.message.hash[hash].id + '">' + data.response.message.hash[hash].hash + ' - ' + data.response.message.hash[hash].name + '</option>');
 		}
 	}
 }
@@ -410,7 +423,8 @@ function parseCodeListResponse(data, type) {
  * @param data
  * @returns
  */
-function getUsersResponse(data) {
+function getUsersResponse(data) 
+{
 	//save userdata
 	userdata = data;
 	// load users to list
@@ -645,7 +659,7 @@ function clearUnusedCodes(number) {
 	let sendPerm = {
 			"serviceName":"clearUnusedCodes",
 			"param":{
-				"disabled": 0
+				"disabled": number
 			}
 	}
 	postToApi(sendPerm);	
@@ -659,6 +673,29 @@ function printUnusedCodes() {
 			}
 	}
 	postToApi(sendPerm);	
+}
+
+function makeEvent(hashid) {
+	let sendPerm = {
+			"serviceName":"eventFromHashId",
+			"param":{
+				"hashid": hashid
+			}
+	}
+	postToApi(sendPerm);	
+}
+
+function getEvents()
+{
+	
+	let sendPerm = {
+			"serviceName":"getEventList",
+			"param":{
+				"param": "param"
+			}
+	}
+	postToApi(sendPerm);
+	
 }
 
 /**
@@ -684,7 +721,7 @@ function loadpage(page){
 		    	  $('#submitCreateUser').click(function() { addUser() });
 		    	  $('#submitRemoveUser').click(function() { deleteUser($('#userlist').children("option:selected").val())} );
 		    	  
-		    	  $('#userlist').children("option:selected").val()
+		    	  $('#userlist').children("option:selected").val();
 		    	  
 		    	  getUsers();
 	    		  break;
@@ -694,6 +731,12 @@ function loadpage(page){
 	    		  $('#submitGenerate').click(function() { generateCodes($('#numberOfNewCodes').val()) });
 	    		  $('#submitClearUnused').click(function() { clearUnusedCodes(0) });
 	    		  $('#submitPrintUnusedCodes').click(function() { printUnusedCodes() });
+	    		  $('#submitMakeEvent').click(function() { makeEvent($('#unusedcodelist').children("option:selected").val()) });
+	    		  
+	    		  break;
+	    	  case 'events.php':
+	    		  getEvents();
+	    		  
 	    		  
 	    		  break;
 	    	 default:

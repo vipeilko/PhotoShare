@@ -4,7 +4,7 @@
 <h1 id="contentheader">MANAGE QR-CODES</h1>
     		<div class="subitem content">
     			<div class="subitem secondsubitem currentusers">
-    				<p>Used codes</p>
+    				<span class="subitemheader">Used codes</span>
     				<select class="list" name="codelist" id="usedcodelist" size="21">
 						
     				</select>
@@ -12,15 +12,15 @@
     			</div>
     			
     			<div class="subitem secondsubitem currentusers">
-    				<p>Unused codes</p>
+    				<span class="subitemheader">Unused codes</span>
     				<select class="list" name="codelist" id="unusedcodelist" size="21">
 						
     				</select>
-
+					<input id="submitMakeEvent" type="submit" value="make event from selected">
     			</div>
     			
     			<div class="subitem secondsubitem currentusers">
-    				<p>Tools</p>
+    				<span class="subitemheader">Tools</span>
     				<input id="submitStartProcessing" type="submit" value="start processing">
     				<input id="submitClearUnused" type="submit" value="clear unused codes">
     				

@@ -150,6 +150,36 @@ class Api extends Rest
         $this->response(QR_PDF_GENERATED, $filename);
     }
     
+    public function eventFromHashId()
+    {
+        // check if user has permission to get codes
+        if ( !$this->user->checkPrivilige(PERM_EVENT, PERM_DESCR_CREATE_EVENT) ) {
+            $this->throwException(USER_HAS_NO_RIGHT, "User has no right to generate events");
+        }
+        $this->validateParameter('hashid', $this->param['hashid'], INTEGER);
+       
+        // This allows only current user to modify own hash. 
+        if ( !$this->qr->makeEventFromHash($this->user->getUserId(), $this->param['hashid']) ) {
+            $this->throwException(QR_FAILED_TO_MODIFY_TYPE, 'Failed to modify qr type');
+        }
+        $this->response(EVENT_SUCCESS_CREATED, 'Event successfully created');
+    }
+    
+    public function getEventList()
+    {
+        // check if user has permission to get events
+        if ( !$this->user->checkPrivilige(PERM_EVENT, PERM_DESCR_EDIT_EVENT) ) {
+            $this->throwException(USER_HAS_NO_RIGHT, "User has no right to edit event");
+        }
+        //$this->response(QR_SUCCESS_GET_UNUSED_HASHES, $this->qr->getUsedHashes());
+        if ( !($this->qr->getEvents($this->user->getUserId())) ) {
+            $this->throwException(666, "jooo");
+        } else {
+            $this->response(EVENT_SUCCESS_GET_LIST, $this->qr->unusedHash());
+        }
+        
+    }
+    
     /**
      * Test function.
      */

@@ -38,6 +38,12 @@ define('QR_CODE_PDF_URL_PREFIX', 'http://192.168.1.4/PhotoShare/'.DATA_PATH_REAL
 define('QR_CODE_DEFAULT_SIZE',                150); 
 define('QR_CODE_GENERATE_WITHOUT_PATH',      true); //default false
 
+/*
+ * QR / EVENT 
+ */
+define('QR_CODE_TYPE_GALLERY',                  0); // Reqular gallery id, default 0
+define('QR_CODE_TYPE_EVENT',                    1); // Event id, default 1
+
 
 // Images are atomatically resized, here settings which defines maximun width/height, etc...
 define('THUMBNAIL_MAX_WIDTH',           200); // thumbnail max width
@@ -131,7 +137,7 @@ define('QR_CODE_DO_NOT_EXIST',          114);
 
 define('QR_FAILED_GENERATE_CODES',      120);
 define('QR_FAILED_CLEAR_UNUSED',        121);
-
+define('QR_FAILED_TO_MODIFY_TYPE',      122);
 
 /**
  * TODO: Do we need general place for error messages?
@@ -186,6 +192,9 @@ define('QR_SUCCESS_GET_UNUSED_HASHES',              222);
 define('QR_SUCCESS_CODE_GENERATED',                 223);
 define('QR_SUCCESS_CLEAR_UNUSED',                   224);
 define('QR_PDF_GENERATED',                          225);
+
+define('EVENT_SUCCESS_CREATED',                     240);
+define('EVENT_SUCCESS_GET_LIST',                    241);
 
 
 /* Server Errors */

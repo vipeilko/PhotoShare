@@ -382,7 +382,7 @@ class qr extends Api {
         $this->database = $db->connect();
         
         try {
-            $sql = ("SELECT DISTINCT h.Hash, h.CreatedOn 
+            $sql = ("SELECT DISTINCT h.Id, h.Hash, h.CreatedOn 
                                     FROM hash h, 
                                          images i 
                                     WHERE 
@@ -401,8 +401,8 @@ class qr extends Api {
             $stmt->execute();
 
             while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-                $this->usedHash['hash'][$row['Hash']]['hash'] = $row['Hash'];
-               // $this->usedHashes['hash'][$row['Hash']]['createdon'] = $row['CreatedOn'];
+                $this->usedHash['hash'][$row['Id']]['id'] = $row['Id'];
+                $this->usedHash['hash'][$row['Id']]['hash'] = $row['Hash'];
 
             }
             return true;
@@ -413,13 +413,16 @@ class qr extends Api {
          
     }
     
-    public function getUnusedHash($userid, $disabled = 0, $limit_start = 0, $limit_end = 100)
+    public function getUnusedHash($userid, $type = QR_CODE_TYPE_GALLERY, $disabled = 0, $limit_start = 0, $limit_end = 100)
     {
         $db = new Database();
         $this->database = $db->connect();
         
+        // only unused so nothing but default. 
+        // hash is used two ways; as a event or as an image(s)
+        
         try {
-            $sql = ("SELECT h.Hash, h.CreatedOn 
+            $sql = ("SELECT h.Id, h.Hash, h.Name, h.Descr, h.CreatedOn 
                                     FROM hash h 
                                     WHERE h.Id 
                                     NOT IN (
@@ -427,7 +430,8 @@ class qr extends Api {
                                         FROM images i
                                     ) AND 
                                     h.OwnerId = :userid AND
-                                    h.Disabled = :disabled
+                                    h.Disabled = :disabled AND
+                                    h.type = :type
                                     ORDER BY h.Id desc 
                                     LIMIT :start, :end");
             
@@ -435,15 +439,21 @@ class qr extends Api {
             $stmt->bindParam(":start",      $limit_start,   PDO::PARAM_INT);
             $stmt->bindParam(":end",        $limit_end,     PDO::PARAM_INT);
             $stmt->bindParam(":userid",     $userid,        PDO::PARAM_STR);
+            $stmt->bindParam(":type",       $type,          PDO::PARAM_STR);
             $stmt->bindParam(":disabled",   $disabled,      PDO::PARAM_STR);
             
             $stmt->execute();
 
             while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
                 //echo ("i: " .$i. "\n");
-                $this->unusedHash['hash'][$row['Hash']]['hash'] = $row['Hash'];
-               // $this->usedHashes['hash'][$row['Hash']]['createdon'] = $row['CreatedOn'];
-
+                $this->unusedHash['hash'][$row['Id']]['id'] = $row['Id'];
+                $this->unusedHash['hash'][$row['Id']]['hash'] = $row['Hash'];
+                
+                // if it is event add name and descr to output
+                if ( $type == QR_CODE_TYPE_EVENT ) {
+                    $this->unusedHash['hash'][$row['Id']]['name'] = $row['Name'];
+                    $this->unusedHash['hash'][$row['Id']]['descr'] = $row['Descr'];
+                }
             }
             
             return true;
@@ -493,8 +503,11 @@ class qr extends Api {
     }
     
     /**
+     * createPdfFromUnusedCodes
      * 
-     * @param unknown $userid
+     * 
+     * @param $userid
+     * @return string
      */
     public function createPdfFromUnusedCodes($userid)
     {
@@ -564,6 +577,69 @@ class qr extends Api {
         
         return QR_CODE_PDF_URL_PREFIX.$userid.'_'.$createdOn.'.pdf';
         //$pdf->Output('example_66.pdf', 'I');
+    }
+    
+    /**
+     * modifyHashType
+     * 
+     * @param $userid 
+     * @param $hashId
+     * @param $typeToSet
+     * 
+     *  $typeToSet  0 = Image gallery
+     *              1 = Event
+     * 
+     */
+    private function modifyHashType($userid, $hashId, $typeToSet) 
+    {
+        try {
+            $db = new Database();
+            $this->database = $db->connect();
+    
+            $sql = "UPDATE hash SET Type = :type WHERE OwnerId = :userid AND Id = :hashid";
+            
+            $stmt = $this->database->prepare($sql);
+            $stmt->bindParam(":userid", $userid);
+            $stmt->bindParam(":type", $typeToSet);
+            $stmt->bindParam(":hashid", $hashId);
+            
+            $stmt->execute();
+        } catch (Exception $e) {  
+            $this->throwException(DATABASE_ERROR, $e);
+        }
+        return true;
+    }
+    
+    /**
+     * makeEventFromHash
+     * 
+     * @param $userid
+     * @param $hashId
+     * @return throw error or true
+     */
+    public function makeEventFromHash($userid, $hashId)
+    {
+        if( !$this->modifyHashType($userid, $hashId, QR_CODE_TYPE_EVENT) ) {
+            return false;
+        }
+        return true;
+    }
+    
+    /**
+     * getEvents
+     * 
+     * @param unknown $userid
+     * @return boolean|hashlist
+     */
+    public function getEvents($userid) 
+    {
+        if ( !$this->getUnusedHash($userid, QR_CODE_TYPE_EVENT) ) {
+            return false;
+        }
+        if ( !empty($this->unusedHash) ) {
+            return $this->unusedHash;
+        }
+        return false;
     }
     
     function cmpImgTime($element1, $element2) 
