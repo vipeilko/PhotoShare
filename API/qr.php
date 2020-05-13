@@ -26,12 +26,18 @@ use Endroid\QrCode\ErrorCorrectionLevel;
 class qr extends Api {
     
     public $database;
-    protected array $qrHash; // not needed if used db queries instead
+    protected array $qrHash; // used to generate codes
     public array $qrCodes;
     public $qrText;
     
     protected array $usedHash;
     protected array $unusedHash;
+    
+    protected $event_id;
+    protected $event_code;
+    protected $event_name;
+    protected $event_descr;
+    
     
     public function __construct() 
     {
@@ -480,17 +486,18 @@ class qr extends Api {
         
     }
     
-    public function deleteUnusedCodes($userid, $disabled = 0) 
+    public function deleteUnusedCodes($userid, $disabled = 0, $type = 0) 
     {
         $db = new Database();
         $this->database = $db->connect();
         
         try {
-            $sql = ("DELETE FROM hash WHERE Id NOT IN (SELECT HashId FROM images) AND OwnerId = :userid AND Disabled = :disabled");
+            $sql = ("DELETE FROM hash WHERE Id NOT IN (SELECT HashId FROM images) AND OwnerId = :userid AND Disabled = :disabled AND Type = :type ");
             
             $stmt = $this->database->prepare($sql);
             $stmt->bindParam(":userid",     $userid,        PDO::PARAM_STR);
             $stmt->bindParam(":disabled",   $disabled,      PDO::PARAM_STR);
+            $stmt->bindParam(":type",       $type,          PDO::PARAM_STR);
             
             $stmt->execute();
             
@@ -609,6 +616,11 @@ class qr extends Api {
         }
         return true;
     }
+
+    /***
+     * EVENTS
+     * 
+     */
     
     /**
      * makeEventFromHash
@@ -642,6 +654,124 @@ class qr extends Api {
         return false;
     }
     
+    /**
+     * Updates event information from current
+     */
+    public function updateEvent($userid) 
+    {
+        try {
+            $db = new Database();
+            $this->database = $db->connect();
+            
+            $type           = QR_CODE_TYPE_EVENT;
+            $event_id       = $this->getEventId();
+            $event_code     = $this->getEventCode();
+            $event_name     = $this->getEventName();
+            $event_descr    = $this->getEventDescr();
+            
+            $sql = "UPDATE hash SET Name = :name, Descr = :descr WHERE OwnerId = :userid AND Id = :eventid AND Hash = :hash AND Type = :type";
+            
+            $stmt = $this->database->prepare($sql);
+            
+            $stmt->bindParam(":userid",     $userid);
+            $stmt->bindParam(":eventid",    $event_id);
+            $stmt->bindParam(":type",       $type);
+            $stmt->bindParam(":hash",       $event_code);
+            $stmt->bindParam(":name",       $event_name);
+            $stmt->bindParam(":descr",      $event_descr);
+            
+            $stmt->execute();
+            
+            // $stmt->debugDumpParams(); //debug
+            
+        } catch (Exception $e) {
+            $this->throwException(DATABASE_ERROR, $e);
+        }
+        return true;
+    }
+    
+    public function getEventCodesFromDb($userid) 
+    {
+        try {
+            $db = new Database();
+            $this->database = $db->connect();
+            
+            $event_id = $this->getEventId();
+            
+            $sql = "SELECT Id, Hash FROM hash WHERE FatherId = :id AND OwnerId = :userid";
+            
+            $stmt = $this->database->prepare($sql);
+            
+            $stmt->bindParam(":userid", $userid);
+            $stmt->bindParam(":id",     $event_id);
+            
+            $stmt->execute();
+            
+            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                $this->usedHash['hash'][$row['Id']]['id'] = $row['Id'];
+                $this->usedHash['hash'][$row['Id']]['hash'] = $row['Hash'];
+                
+            }
+            return true;
+            
+        } catch (Exception $e) {
+            $this->throwException(DATABASE_ERROR, $e);
+        }
+        return true;
+    }
+    
+    public function setEventId($value) 
+    {
+        $this->event_id = $value;
+    }
+    public function getEventId()
+    {
+        return $this->event_id;
+    }
+    
+    public function setEventCode($value)
+    {
+        $this->event_code = $value;
+    }
+    public function getEventCode()
+    {
+        return $this->event_code;
+    }
+    
+    public function setEventName($value)
+    {
+        $this->event_name = $value;
+    }
+    public function getEventName()
+    {
+        return $this->event_name;
+    }
+
+    public function setEventDescr($value)
+    {
+        $this->event_descr = $value;
+    }
+    public function getEventDescr()
+    {
+        return $this->event_descr;
+    }
+
+    
+    /***
+     * OTHER
+     *
+     */
+    
+    /**
+     * cmpImgTime
+     * 
+     * compares times which is greater
+     * 
+     * return   0 = equal
+     *          1 = left is greater
+     *         -1 = rigth is greater
+     *  
+     */
     function cmpImgTime($element1, $element2) 
     {
         $time1 = $element1['mtime'];

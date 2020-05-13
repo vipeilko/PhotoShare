@@ -8,7 +8,7 @@
     				<select class="list" name="codelist" id="usedcodelist" size="21">
 						
     				</select>
-    				<input id="submitViewSelected" type="submit" value="view selected">
+    				<input id="submitViewSelectedCode" type="submit" value="view selected code">
     			</div>
     			
     			<div class="subitem secondsubitem currentusers">

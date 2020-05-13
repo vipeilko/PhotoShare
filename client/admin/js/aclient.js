@@ -129,6 +129,13 @@ $(document).ajaxStop(function() {
 			// refresh list after 
 			getUnusedCodes();
 			break;
+			
+		case 242:
+			// Edit event success
+			// refresh list
+			getEvents();
+			
+			break;
 		case 666:
 			break;
 			
@@ -295,6 +302,11 @@ function postToApi(dataToPost) {
 				case 241:
 					// event code list
 					parseCodeListResponse(data, 'event');
+
+					break;
+				case 243:
+					// used event codes, same handler as normal used codes
+					parseCodeListResponse(data, 'used');
 					
 					break;
 				case 302:
@@ -411,8 +423,15 @@ function parseCodeListResponse(data, type)
 				$('#usedcodelist').append('<option id="code_'+ data.response.message.hash[hash].hash +'" value="' + data.response.message.hash[hash].id + '">' + data.response.message.hash[hash].hash + '</option>');
 			if ( type == 'unused') 
 				$('#unusedcodelist').append('<option id="code_'+ data.response.message.hash[hash].hash +'" value="' + data.response.message.hash[hash].id + '">' + data.response.message.hash[hash].hash + '</option>');
-			if ( type == 'event' ) 
+			if ( type == 'event' ) {
 				$('#eventlist').append('<option id="code_'+ data.response.message.hash[hash].hash +'" value="' + data.response.message.hash[hash].id + '">' + data.response.message.hash[hash].hash + ' - ' + data.response.message.hash[hash].name + '</option>');
+				// add events for eventlist, values to input boxes
+				$('#eventlist').on('click', function () {
+					$('input#eventCode').val(data.response.message.hash[$('#eventlist').children("option:selected").val()].hash);
+					$('input#eventName').val(data.response.message.hash[$('#eventlist').children("option:selected").val()].name);
+					$('input#eventDescr').val(data.response.message.hash[$('#eventlist').children("option:selected").val()].descr);
+				});
+			}
 		}
 	}
 }
@@ -602,13 +621,8 @@ function addUser() {
  * @returns
  */
 function editUser() {
-	/*let tempPerm;
-	let tempObj = {};*/
-	/*let sendPerm = { 
-			permissions:[{}]
-	};*/
-	
-	let sendPerm = {
+
+	let request = {
   				"serviceName":"editUser",
   				"param":{
   					"userid":$('#userlist').children("option:selected").val(),
@@ -619,83 +633,108 @@ function editUser() {
   					"retypepassword":$('#retypepassword').val()
   				}
 		};
-	collectPermsAndPostToApi(sendPerm);
+	collectPermsAndPostToApi(request);
 	
 }
 
 function getUnusedCodes() {
-	let sendPerm = {
+	let request = {
 			"serviceName":"getUnusedCodes",
 			"param":{
 				"start": 0,
 				"end": 100
 			}
 	}
-	postToApi(sendPerm);
+	postToApi(request);
 }
 
 function getUsedCodes() {
-	let sendPerm = {
+	let request = {
 			"serviceName":"getUsedCodes",
 			"param":{
 				"start": 0,
 				"end": 100
 			}
 	}
-	postToApi(sendPerm);
+	postToApi(request);
 }
 
 function generateCodes(number) {
-	let sendPerm = {
+	let request = {
 			"serviceName":"generateCodes",
 			"param":{
 				"ammount": number
 			}
 	}
-	postToApi(sendPerm);
+	postToApi(request);
 }
 
 function clearUnusedCodes(number) {
-	let sendPerm = {
+	let request = {
 			"serviceName":"clearUnusedCodes",
 			"param":{
 				"disabled": number
 			}
 	}
-	postToApi(sendPerm);	
+	postToApi(request);	
 }
 
 function printUnusedCodes() {
-	let sendPerm = {
+	let request = {
 			"serviceName":"printUnusedCodes",
 			"param":{
 				"disabled": 0
 			}
 	}
-	postToApi(sendPerm);	
+	postToApi(request);	
 }
 
 function makeEvent(hashid) {
-	let sendPerm = {
+	let request = {
 			"serviceName":"eventFromHashId",
 			"param":{
 				"hashid": hashid
 			}
 	}
-	postToApi(sendPerm);	
+	postToApi(request);	
 }
 
 function getEvents()
 {
 	
-	let sendPerm = {
+	let request = {
 			"serviceName":"getEventList",
 			"param":{
 				"param": "param"
 			}
 	}
-	postToApi(sendPerm);
-	
+	postToApi(request);	
+}
+
+
+function editEvent() {
+	let request = {
+  				"serviceName":"editEvent",
+  				"param":{
+  					"id":$('#eventlist').children("option:selected").val(),
+  					"code":$('#eventCode').val(),
+  					"name":$('#eventName').val(),
+  					"descr":$('#eventDescr').val()
+  				}
+		};
+	postToApi(request);
+}
+
+
+function getCodesTiedToEvent () 
+{
+	let request = {
+				"serviceName":"getEventCodes",
+				"param":{
+					"id":$('#eventlist').children("option:selected").val(),
+				}
+	};
+postToApi(request);
 }
 
 /**
@@ -737,6 +776,12 @@ function loadpage(page){
 	    	  case 'events.php':
 	    		  getEvents();
 	    		  
+	    		  $('#submitEditEvent').click(function() { editEvent(); });
+	    		  
+				// add events for eventlist
+				$('#eventlist').on('click', function () {
+					getCodesTiedToEvent();
+				});
 	    		  
 	    		  break;
 	    	 default:

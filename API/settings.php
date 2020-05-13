@@ -139,6 +139,9 @@ define('QR_FAILED_GENERATE_CODES',      120);
 define('QR_FAILED_CLEAR_UNUSED',        121);
 define('QR_FAILED_TO_MODIFY_TYPE',      122);
 
+define('EVENT_FAILED_TO_EDIT',           130);
+define('EVENT_FAILED_TO_LIST_CODES',     131);
+
 /**
  * TODO: Do we need general place for error messages?
  * @var array $error_messages
@@ -195,6 +198,8 @@ define('QR_PDF_GENERATED',                          225);
 
 define('EVENT_SUCCESS_CREATED',                     240);
 define('EVENT_SUCCESS_GET_LIST',                    241);
+define('EVENT_SUCCESS_EDIT',                        242);
+define('EVENT_SUCCESS_LIST_CODES',                  243);
 
 
 /* Server Errors */

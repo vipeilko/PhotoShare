@@ -180,6 +180,52 @@ class Api extends Rest
         
     }
     
+    public function editEvent() 
+    {
+        // check if user has permission to edit users
+        if ( !$this->user->checkPrivilige(PERM_EVENT, PERM_DESCR_EDIT_EVENT) ) {
+            $this->throwException(USER_HAS_NO_RIGHT, "User has no right to edit event");
+        }
+        
+        // validate input
+        $this->validateParameter('id', $this->param['id'], INTEGER);
+        $this->validateParameter('code', $this->param['code'], STRING);
+        $this->validateParameter('name', $this->param['name'], STRING, false);
+        $this->validateParameter('descr', $this->param['descr'], STRING, false);
+        
+        
+        // if validation ok, let's proceed to update event information
+        // first set current event properties from input
+        $this->qr->setEventId($this->param['id']);
+        $this->qr->setEventCode($this->param['code']);
+        $this->qr->setEventDescr($this->param['descr']);
+        $this->qr->setEventName($this->param['name']);
+
+        // Handle update process response
+        if ( !$this->qr->updateEvent($this->user->getUserId()) ) {
+            $this->throwException(EVENT_FAILED_TO_EDIT, "Cannot edit event");
+        }
+        
+        $this->response(EVENT_SUCCESS_EDIT, "Event successfully edited");
+    }
+    
+    public function getEventCodes() 
+    {
+        // check if user has permission to edit users
+        if ( !$this->user->checkPrivilige(PERM_EVENT, PERM_DESCR_EDIT_EVENT) ) {
+            $this->throwException(USER_HAS_NO_RIGHT, "User has no right to edit event");
+        }
+        // validate input
+        $this->validateParameter('id', $this->param['id'], INTEGER);
+        // set parameter
+        $this->qr->setEventId($this->param['id']);
+        
+        if ( !$this->qr->getEventCodesFromDb($this->user->getUserId()) ) {
+            $this->throwException(EVENT_FAILED_TO_LIST_CODES, "Failed to list codes");
+        }
+        $this->response(EVENT_SUCCESS_LIST_CODES, $this->qr->usedHash());
+    }
+    
     /**
      * Test function.
      */
