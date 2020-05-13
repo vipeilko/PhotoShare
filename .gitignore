@@ -7,7 +7,6 @@
 .project
 .buildpath
 composer.lock
-composer.*
 vendor/firebase/php-jwt/src/SignatureInvalidException.php
 vendor/firebase/php-jwt/src/JWT.php
 vendor/firebase/php-jwt/src/ExpiredException.php

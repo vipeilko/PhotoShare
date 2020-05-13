@@ -1,0 +1,8 @@
+{
+    "require": {
+        "khanamiryan/qrcode-detector-decoder": "^1.0",
+        "firebase/php-jwt": "^5.0",
+        "endroid/qr-code": "^3.7",
+        "tecnickcom/tcpdf": "^6.3"
+    }
+}
