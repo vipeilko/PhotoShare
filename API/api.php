@@ -254,7 +254,8 @@ class Api extends Rest
      * addUser
      * 
      */
-    public function addUser() {
+    public function addUser() 
+    {
         // check if user has permission to add users
         if ( !$this->user->checkPrivilige(PERM_USER, PERM_DESCR_ADD_USER) ) {
             $this->throwException(USER_HAS_NO_RIGHT, "User has no right to add user");
@@ -292,8 +293,8 @@ class Api extends Rest
         
     }
     
-    public function editUser() {
-        
+    public function editUser() 
+    {
         // check if user has permission to edit users
         if ( !$this->user->checkPrivilige(PERM_USER, PERM_DESCR_EDIT_USER) ) {
             $this->throwException(USER_HAS_NO_RIGHT, "User has no right to update user permissions");
@@ -333,7 +334,8 @@ class Api extends Rest
     /**
      * 
      */
-    public function getUserPermById() {
+    public function getUserPermById() 
+    {
         // validate input
         $id = $this->validateParameter('userid', $this->param['userid'], INTEGER);
         $this->response(SUCCESS_RESPONSE, $this->user->getUserPerm($id));   
@@ -345,7 +347,8 @@ class Api extends Rest
      * Gets user roles
      * 
      */
-    public function getRoles() {
+    public function getRoles() 
+    {
         //echo("User id: " . $this->user->getUserId());
         //print_r($this->user->getRoles());
         $this->response(SUCCESS_RESPONSE, $this->user->getRoles());
@@ -356,16 +359,41 @@ class Api extends Rest
      * 
      * gets user permissions
      */
-    public function getPermissions() {
+    public function getPermissions() 
+    {
         $this->response(SUCCESS_RESPONSE, $this->user->getPermissions());
     }
     /**
      * getAllActiveUsers
      * 
      */
-    public function getUsers() {
+    public function getUsers() 
+    {
         $this->response(SUCCESS_RESPONSE, $this->user->getUsers());
     }
+    
+    /** THESE DO NOT REQUIRE AUTHORIZATION 
+     *  
+     *  Write all API functions here which do no require authorization
+     *  
+     * **/
+    
+    /*
+     * 
+     */
+    public function getGallery() 
+    {
+        // Parameter is required as a string
+        $this->validateParameter('code', $this->param['code'], STRING);
+        $this->qr->setEventCode($this->param['code']);
+        
+        if ( !$this->qr->getGallery() ) { 
+            $this->throwException(GALLERY_NOT_AVAILABLE, "Nothing found with your code. Double check your code.");
+        }
+
+        $this->response(GALLERY_SUCCESS_OBTAINED, $this->qr->getImages());
+    }
+    
     
 }
 

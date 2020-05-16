@@ -3,7 +3,7 @@
  * client/admin/index.php 
  * 
  * 1.4.2020 First introduction, still work to do with layout
- * 2.4.2002 Layout fixes and additions
+ * 2.4.2020 Layout fixes and additions
  * 
  */
 

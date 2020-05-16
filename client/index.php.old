@@ -1,14 +1,4 @@
 <?php
-/**
- * client/index.php
- *
- * 06.03.2020 First introduction
- * 27.03.2020 First version ready
- * 16.05.2020 New layout; simplier and more like admin panel
- *            Fisrt introduction of code gallery
- * 
- *
- */
 
 ?>
 <!DOCTYPE html>
@@ -26,10 +16,16 @@
 <body>
 
 <div class="container">
-	<div class="logo"><img src="content/logo.png" alt="logo"></div>
-
-	<div class="subcontainer">
-		<span class="subitem">Searching for a photo? Enter your 8 digt code or use QR-reader</span>
+	<!-- top row -->
+	<div class="item item1"></div>
+	<div class="item item2">PhotoShare</div>
+	<div class="item item3"></div>
+	
+	<!-- middle row -->
+	<div class="item item4"></div>
+	
+	<div class="item item5">
+		<div class="subitem item6">Searching for a photo? Enter your 8 digt code or use qr reader.</div>
 		
 		<div class="subitem code form-group">
 			<span class="left">CODE</span>
@@ -46,19 +42,28 @@
     	<div class="subitem submit loginsubmit form-group">
         	<input class="form-field" type="submit" value="Login" id="login" name="login"><br>
     	</div>
-    	<!-- navigation -->
-    	<nav class="subitem navigation">
-        	<ul>
-        		<li class="active"><a id="navcode" href="#">enter code</a></li>
-        		<li><a id="navlogin" href="#">login</a></li>
-        		<li><a id="navadminpage" href="admin/">admin page</a></li>
-        		<li><a id="navlogout" href="#">logout</a></li>
-        	</ul>
-    	</nav>
-    	<!-- end of navigation -->
-	</div> <!-- end of subcontainer -->
 
+	</div>
+	
+	<div class="item item8"></div>
+
+	<!-- bottom row -->
+	<div class="item item9"></div>
+	<div class="item item10"></div>
+	<div class="item item11">
+		<div class="subitem item12 tologinbutton"><a href="#">login</a></div>
+		<div class="subitem item13 tocodebutton"><a href="#">code</a></div>
+		<div class="subitem item14 toadminpage"><a href="admin/">admin page</a></div><br>
+		<div class="subitem item15 logout"><a id="logout" href="#logout">logout</a></div>
+	</div>
+	
 </div><!-- end of container -->
+
+
+		<!--	<form>
+        		<input maxlength="8" size="12" value="12345678" type="text" id="code" name="code">
+        		<input type="submit" id="send">
+    		</form>-->
 
 </body>
 

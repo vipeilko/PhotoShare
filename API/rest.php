@@ -56,6 +56,7 @@ class Rest
         // Probalby best practice is list all cases here, so not a single service(function) is available without intend
         switch ($this->serviceName) 
         {
+
             case "validateAccessToken":
                 $this->validateAccessToken();
                 break;
@@ -88,6 +89,10 @@ class Rest
             case "testAuthorization":
                 $this->validateAccessToken();
                 break;
+            // These request do not require authorization
+            // Carefully add functions here
+            case "getGallery":
+                break;
             default:
                 //Should not get here ever because this is already handeled by processApi()
                 $this->throwException(API_DOES_NOT_EXIST, "API does not exist.");
@@ -100,7 +105,7 @@ class Rest
      * 
      * */
     public function validateRequest($request)
-    { 
+    {
         // only JSON content is accepted
         if ($_SERVER['CONTENT_TYPE'] != 'application/json') {
             $this->throwException(REQUEST_CONTENTTYPE_NOT_VALID, 'Requested content-type is not valid');

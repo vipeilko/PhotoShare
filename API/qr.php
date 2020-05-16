@@ -33,6 +33,8 @@ class qr extends Api {
     protected array $usedHash;
     protected array $unusedHash;
     
+    protected array $images;
+    
     protected $event_id;
     protected $event_code;
     protected $event_name;
@@ -756,6 +758,62 @@ class qr extends Api {
         return $this->event_descr;
     }
 
+    /**
+     * 
+     * @return unknown|boolean
+     */
+    public function getImages()
+    {
+        
+        if ( !empty($this->images) ) {
+            return $this->images;
+        }
+        return false;
+    }
+    
+    /**
+     * 
+     * @return boolean
+     */
+    public function getGallery() 
+    {
+        //SELECT i.Id, i.HashId, i.NameOnDisk FROM images i, hash h WHERE h.Hash = "C6DEFC9E" AND i.HashId = h.Id AND i.Deleted = 0;
+        try {
+            $db = new Database();
+            $this->database = $db->connect();
+            
+            $hash = $this->getEventCode();
+            
+            $sql = "SELECT i.Id, i.HashId, h.Hash, i.NameOnDisk FROM images i, hash h WHERE h.Hash = :hash AND i.HashId = h.Id AND i.Deleted = 0";
+            
+            $stmt = $this->database->prepare($sql);
+            
+            $stmt->bindParam(":hash", $hash);
+            
+            $stmt->execute();
+            
+            //$stmt->debugDumpParams(); //debug
+            
+            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                $this->images['image'][$row['Id']]['id'] = $row['Id'];
+                $this->images['image'][$row['Id']]['hash'] = $row['Hash'];
+                $this->images['image'][$row['Id']]['thumbnail'] = IMG_PATH.IMG_SUBPATH_THUMBNAIL.$row['NameOnDisk'];
+                $this->images['image'][$row['Id']]['medium'] = IMG_PATH.IMG_SUBPATH_MEDIUM.$row['NameOnDisk'];
+                $this->images['image'][$row['Id']]['full-size'] = IMG_PATH.IMG_SUBPATH_FULL_SIZE.$row['NameOnDisk'];
+                $this->images['image'][$row['Id']]['original'] = IMG_PATH.IMG_SUBPATH_ORIGINAL.$row['NameOnDisk'];
+            }
+            //print_r($this->images);
+            if ( !empty($this->images) ) { 
+                return true;
+            }
+            return false;
+            
+        } catch (Exception $e) {
+            $this->throwException(DATABASE_ERROR, $e);
+        }
+        return true;
+    }
+    
     
     /***
      * OTHER

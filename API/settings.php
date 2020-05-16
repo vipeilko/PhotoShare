@@ -23,20 +23,27 @@ define('PASSWORD_COST', 10);                // Defines complexity of password ca
 define('PROCESS_TIME_OF_ONE_IMAGE',             5); // Processing time of one image. From original to full-size, medium and thumbnail. Default 5
                                                     // You should run run performanceTest() in qr.php to see how long time is needed to resize and read codes
 define('LENGHT_OF_QR_CODE_HASH',                8); // Defines how many character is used in qr code hash. Default 8. Max 50. HASH is generated in bytes so length is estimated
+define('URL_PATH', 'http://192.168.1.4/PhotoShare/');
 define('PHOTOSHARE_PATH', '/var/www/html/PhotoShare/');
+define('DATA_PATH_REAL',                  'data/');
 define('IMAGE_STORAGE_PATH',    '../data/images/'); // main image path
+define('IMG_SUBPATH',                   'images/'); 
 define('IMG_SUBPATH_ORIGINAL',        'original/'); // sub folder to store original photos. Only needed if KEEP_ORIGINAL_PHOTO is true
 define('IMG_SUBPATH_FULL_SIZE',      'full-size/'); // sub folder to store full-size photos.
 define('IMG_SUBPATH_MEDIUM',            'medium/'); // sub folder to store medium photos.
 define('IMG_SUBPATH_THUMBNAIL',      'thumbnail/'); // sub folder to store thumbnail photos.
+define('IMG_PATH', 'http://192.168.1.4/PhotoShare/'.DATA_PATH_REAL.IMG_SUBPATH);
 define('QR_CODE_IMAGE_PATH',                'qr/');
-define('DATA_PATH_REAL',                  'data/');
+
 define('DATA_PATH',                    '../data/');
 define('QR_PDF_PATH',                      'pdf/');
 define('QR_CODE_URL_PREFIX', 'https://<your server here>/PhotoShare/album/'); // path must include /album/
-define('QR_CODE_PDF_URL_PREFIX', 'http://192.168.1.4/PhotoShare/'.DATA_PATH_REAL.QR_PDF_PATH);
+define('QR_CODE_PDF_URL_PREFIX', URL_PATH.DATA_PATH_REAL.QR_PDF_PATH);
 define('QR_CODE_DEFAULT_SIZE',                150); 
 define('QR_CODE_GENERATE_WITHOUT_PATH',      true); //default false
+
+
+
 
 /*
  * QR / EVENT 
@@ -142,6 +149,8 @@ define('QR_FAILED_TO_MODIFY_TYPE',      122);
 define('EVENT_FAILED_TO_EDIT',           130);
 define('EVENT_FAILED_TO_LIST_CODES',     131);
 
+define('GALLERY_NOT_AVAILABLE',          150);
+
 /**
  * TODO: Do we need general place for error messages?
  * @var array $error_messages
@@ -201,6 +210,7 @@ define('EVENT_SUCCESS_GET_LIST',                    241);
 define('EVENT_SUCCESS_EDIT',                        242);
 define('EVENT_SUCCESS_LIST_CODES',                  243);
 
+define("GALLERY_SUCCESS_OBTAINED",                  250);
 
 /* Server Errors */
 

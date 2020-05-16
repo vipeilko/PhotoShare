@@ -24,23 +24,47 @@ $(document).ready(function() {
 	// if tokens is already issued display a bit different links
 	if ( sessionStorage.getItem('accessToken') != null && sessionStorage.getItem('refreshToken') != null ) {
 		//console.log("true"); //debug
-		$(".tologinbutton, .tocodebutton").hide();
-		$(".toadminpage, .logout").show();
+		
+		$("#navlogin, #navcode").parent().hide();
+		$("#navadminpage, #navlogout").parent().show();
 		//$(".tologinbutton").html('<a href="admin/">admin page</a><br><a href="#logout">logout</a>');
 	} else {
 		//console.log("false"); //debug
-		$(".tologinbutton, .tocodebutton").show();
-		$(".toadminpage, .logout").hide();
-		
+		$("#navlogin, #navcode").parent().show();
+		$("#navadminpage, #navlogout").parent().hide();
 	}
 	
 	//if #login form button is available add listener for doLogin
 	if ($("#login").length) {
-		$("#login").bind('click', doLogin);		
+		$("#login").bind('click', doLogin);
 	}
-	if ($("#logout").length) {
-		$("#logout").bind('click', doLogout);		
+	if ($("#navlogout").length) {
+		$("#navlogout").bind('click', doLogout);		
 	}
+	
+	// highlight active selection on menu and remove previous
+    $('nav li a').click(function(e) {
+        $('nav li.active').removeClass('active');
+        var $parent = $(this).parent();
+        $parent.addClass('active');
+    });
+    
+    // Triggers post to api when field is filled with 8 characters
+    $('#code').change(function() {
+    	// if code is not 8 lenght return immediately
+    	if ( $(this).val().length != 8 ) {
+    		return;
+    	}
+    	// if length is 8 we make request to api 
+    	let data = 
+    	{
+    		"serviceName":"getGallery",
+    		"param":{
+    			"code":$(this).val()
+    		}
+    	};
+    	postToApi(data);
+    });
 
 }); //end document ready
 
@@ -80,8 +104,6 @@ function validateRefreshToken() {
  * @returns
  */
 $(document).ajaxStop(function() {
-	
-	//console.log("ajaxStop code: " + JSON.stringify(code)); //debug
 	switch (code) {
 		case 200:
 			//redirect to admin page
@@ -90,9 +112,6 @@ $(document).ajaxStop(function() {
 		case 201:
 			//refreshtoken updated
 			break;
-		case 666:
-			break;
-			
 		default:
 			//do nothing
 			break;
@@ -222,15 +241,5 @@ function doLogin() {
 		        "password": password
 		    }	
 	};
-	//for quicker test, no need to fill form
-	let testdata = {
-		    "serviceName": "generateToken",
-		    "param": {
-		        "email": "testi@domaini.fi",
-		        "password": "M0n1muotoinenTest!SalaKala"
-		    }	
-	};
-
 	postToApi(jsondata);
-	//end of call is processed by ajaxStop
 } //end doLogin
