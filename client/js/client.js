@@ -14,6 +14,7 @@
 // API URL
 const apiUrl = 'http://192.168.1.4/PhotoShare/API/';	// Application program interface url
 var code = null; 										// Stores latest response code from API
+const NUMBER_OF_IMAGES_IN_ROW = 4;						// Defines how many images is displayed in a row in gallery
 
 //END SETTINGS
 
@@ -58,20 +59,41 @@ $(document).ready(function() {
     	// if length is 8 we make request to api 
     	let data = 
     	{
-    		"serviceName":"getGallery",
+    		"serviceName":"isGalleryAvailable",
     		"param":{
     			"code":$(this).val()
     		}
     	};
     	postToApi(data);
     });
+    
+    // Gallery trigger get images
+    if ($('#albumcode').length > 0) {
+	    if ( $('#albumcode').val().length == 8 ) {
+	    	getGallery($('#albumcode').val());
+	    }
+    }
+    //$('#albumcode').
+    
 
 }); //end document ready
 
+function getGallery(value)
+{
+	let data = 
+	{
+		"serviceName":"getGallery",
+		"param":{
+			"code":value
+		}
+	};
+	postToApi(data);
+}
 /*
  * 
  */
-function validateRefreshToken() {
+function validateRefreshToken() 
+{
 	let data = 
 	{
 		"serviceName":"validateRefreshToken",
@@ -176,7 +198,11 @@ function postToApi(dataToPost) {
 						}
 
 					break;
-
+				case 250:
+					// Gallery obtained
+					
+					parseObtainedGalleryData(data);
+					break;
 				//field is empty but mandatory
 				case 103:
 				//username error
@@ -212,6 +238,44 @@ function postToApi(dataToPost) {
 		}
 	}) //end ajax
 } //end postToApi
+
+function parseObtainedGalleryData(data) 
+{
+	
+	// First clear content
+	$('#gallery').html('');
+	
+	// count images
+	let noi = 0; // number of images
+	for (let id of Object.keys(data.response.message.image)) {
+		noi++;
+	}
+	// calculate how many images in vertical
+	let imgv = noi / NUMBER_OF_IMAGES_IN_ROW; 
+	let fullrows = Math.round(imgv);
+	console.log("Img v: " + imgv);
+	console.log("Full rows: " + fullrows);
+	
+	let i = 1;
+	
+	for (let id of Object.keys(data.response.message.image)) {
+		if ( i == 1 || i % fullrows == 0) {
+			console.log("i % fullrows: " + i % fullrows );
+			console.log("i: " + i );
+			$('#gallery').append('<div class="column"></div>');
+		}
+		//$('#gallery').append
+		console.log("joo");
+		$('#gallery > div:last').append('<a target="_blank" href="'+data.response.message.image[id].original+'"><img src="'+data.response.message.image[id].medium+'" style="width: 98%"></a>');
+		i++;
+		
+		/*if ( i == fullrows-1 ) {
+			console.log("column loppu");
+			$('#gallery').append('</div>');
+		}
+		*/
+	}
+}
 
 /**
  * 

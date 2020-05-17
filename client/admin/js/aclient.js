@@ -731,9 +731,20 @@ function getCodesTiedToEvent ()
 	let request = {
 				"serviceName":"getEventCodes",
 				"param":{
-					"id":$('#eventlist').children("option:selected").val(),
+					"id":$('#eventlist').children("option:selected").val()
 				}
 	};
+postToApi(request);
+}
+
+function startProcessingImages() 
+{
+	let request = {
+			"serviceName":"startProcessingImages",
+			"param":{
+				"zero":0
+			}
+};
 postToApi(request);
 }
 
@@ -771,6 +782,7 @@ function loadpage(page){
 	    		  $('#submitClearUnused').click(function() { clearUnusedCodes(0) });
 	    		  $('#submitPrintUnusedCodes').click(function() { printUnusedCodes() });
 	    		  $('#submitMakeEvent').click(function() { makeEvent($('#unusedcodelist').children("option:selected").val()) });
+	    		  $('#submitStartProcessing').click(function() { startProcessingImages() });
 	    		  
 	    		  break;
 	    	  case 'events.php':

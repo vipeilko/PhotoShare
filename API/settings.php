@@ -151,6 +151,7 @@ define('EVENT_FAILED_TO_LIST_CODES',     131);
 
 define('GALLERY_NOT_AVAILABLE',          150);
 
+
 /**
  * TODO: Do we need general place for error messages?
  * @var array $error_messages
@@ -210,7 +211,8 @@ define('EVENT_SUCCESS_GET_LIST',                    241);
 define('EVENT_SUCCESS_EDIT',                        242);
 define('EVENT_SUCCESS_LIST_CODES',                  243);
 
-define("GALLERY_SUCCESS_OBTAINED",                  250);
+define('GALLERY_SUCCESS_OBTAINED',                  250);
+define('GALLERY_AVAILABLE',                         251);
 
 /* Server Errors */
 

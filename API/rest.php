@@ -71,6 +71,7 @@ class Rest
                 $this->getUserPermById();
                 break;
             // list all authorization needed services here
+            case "startProcessingImages":
             case "getEventCodes":
             case "editEvent":
             case "getEventList":
@@ -92,6 +93,7 @@ class Rest
             // These request do not require authorization
             // Carefully add functions here
             case "getGallery":
+            case "isGalleryAvailable":
                 break;
             default:
                 //Should not get here ever because this is already handeled by processApi()

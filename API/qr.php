@@ -284,6 +284,7 @@ class qr extends Api {
             $thumbnail = $this->resizeImage($mediumSize, THUMBNAIL_MAX_WIDTH, THUMBNAIL_MAX_HEIGHT, IMG_SUBPATH_THUMBNAIL);
             
             $qrText = $this->readQrCodeFromImage($mediumSize);
+            //echo("QRTEXT: " . $qrText);
             
             // collect hash from captured URL
             //echo ("QRTEXT: " . $qrText. "\n");
@@ -360,9 +361,9 @@ class qr extends Api {
             
             // if KEEP_ORIGINAL_PHOTO is true let's move it to IMG_SUBPATH_ORIGINAL folder, otherwise delete it
             if ( KEEP_ORIGINAL_PHOTO ) {
-                rename ($path['dirname'] ."/". $path['basename'], $path['dirname'] . "/" . IMG_SUBPATH_ORIGINAL . $path['basename']);
+                //rename ($path['dirname'] ."/". $path['basename'], $path['dirname'] . "/" . IMG_SUBPATH_ORIGINAL . $path['basename']);
                 //TODO: comment above and uncomment below when in production to enable orginal photo. Easier way to test when using above.
-                //rename ($path['dirname'] ."/". $path['basename'], $path['dirname'] . "/" . IMG_SUBPATH_ORIGINAL . $imgbelongstocode . "_" . $path['basename']);
+                rename ($path['dirname'] ."/". $path['basename'], $path['dirname'] . "/" . IMG_SUBPATH_ORIGINAL . $imgbelongstocode . "_" . $path['basename']);
             } else {
                 unlink ( $path['dirname'] ."/". $path['basename'] );
             }
@@ -370,8 +371,8 @@ class qr extends Api {
             $i++;
         } // END processing / end foreach
         
-        // returns 220 so client knows to ask more
-        $this->response(QR_SUCCESS_PROCESS_IMAGES, $i . " image(s) were processed");
+        // return number of images were processed
+        return $i . " image(s) were processed";
         
         $db->disconnect();
         //TODO: Save to db information from last used HasId and/or hash 
@@ -771,6 +772,33 @@ class qr extends Api {
         return false;
     }
     
+    public function checkGalleryAvailability()
+    {
+        try {
+            $db = new Database();
+            $this->database = $db->connect();
+            
+            $hash = $this->getEventCode();
+            
+            $sql = "SELECT h.Type FROM hash h WHERE h.Hash = :hash AND h.Disabled = 0";
+            $stmt = $this->database->prepare($sql);
+            $stmt->bindParam(":hash", $hash);
+            
+            $stmt->execute();
+
+            // count rows
+            $count = $stmt->rowCount();
+            
+            // if at least one match return true
+            if ( $count > 0 ) {
+                return true;
+            }
+            return false;   
+        } catch (Exception $e) {
+            $this->throwException(DATABASE_ERROR, $e);
+        }
+    }
+    
     /**
      * 
      * @return boolean
@@ -799,7 +827,7 @@ class qr extends Api {
                 $this->images['image'][$row['Id']]['hash'] = $row['Hash'];
                 $this->images['image'][$row['Id']]['thumbnail'] = IMG_PATH.IMG_SUBPATH_THUMBNAIL.$row['NameOnDisk'];
                 $this->images['image'][$row['Id']]['medium'] = IMG_PATH.IMG_SUBPATH_MEDIUM.$row['NameOnDisk'];
-                $this->images['image'][$row['Id']]['full-size'] = IMG_PATH.IMG_SUBPATH_FULL_SIZE.$row['NameOnDisk'];
+                $this->images['image'][$row['Id']]['fullsize'] = IMG_PATH.IMG_SUBPATH_FULL_SIZE.$row['NameOnDisk'];
                 $this->images['image'][$row['Id']]['original'] = IMG_PATH.IMG_SUBPATH_ORIGINAL.$row['NameOnDisk'];
             }
             //print_r($this->images);

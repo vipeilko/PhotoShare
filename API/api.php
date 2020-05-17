@@ -372,11 +372,42 @@ class Api extends Rest
         $this->response(SUCCESS_RESPONSE, $this->user->getUsers());
     }
     
+    public function startProcessingImages() 
+    {
+        // check if user has permission to get codes
+        if ( !$this->user->checkPrivilige(PERM_CODE, PERM_DESCR_PROCESS_CODE) ) {
+            $this->throwException(USER_HAS_NO_RIGHT, "User has no right to process codes");
+        }
+        //$this->response(QR_SUCCESS_GET_UNUSED_HASHES, $this->qr->getUsedHashes());
+        
+        $ans = $this->qr->processImages();
+        
+        // returns 220 so client knows to ask more
+        $this->response(QR_SUCCESS_PROCESS_IMAGES, $ans);
+        
+    }
+    
     /** THESE DO NOT REQUIRE AUTHORIZATION 
      *  
      *  Write all API functions here which do no require authorization
      *  
      * **/
+    
+    /**
+     * 
+     */
+    public function isGalleryAvailable() 
+    {
+        // Parameter is required as a string
+        $this->validateParameter('code', $this->param['code'], STRING);
+        $this->qr->setEventCode($this->param['code']);
+        
+        if ( !$this->qr->checkGalleryAvailability() ) {
+            $this->throwException(GALLERY_NOT_AVAILABLE, "Nothing found with your code. Double check your code.");
+        }
+        // this gallery is available
+        $this->response(GALLERY_AVAILABLE, $this->param['code']);
+    }
     
     /*
      * 
