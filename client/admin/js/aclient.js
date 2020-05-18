@@ -11,6 +11,7 @@
 
 // API URL
 const apiUrl = 'http://192.168.1.4/PhotoShare/API/';	// Application program interface url
+const baseUrl = 'http://192.168.1.4/PhotoShare/';
 var code = null; 										// Stores latest response code from API
 var type = null;										// Stores latest response type from API
 var dataToPostAfterRefreshingTokens = null;				// Stores last request that failed because of experied token
@@ -737,6 +738,11 @@ function getCodesTiedToEvent ()
 postToApi(request);
 }
 
+function viewSelectedCode(code) 
+{
+	window.open(baseUrl + 'client/album/' + code);
+}
+
 function startProcessingImages() 
 {
 	let request = {
@@ -781,14 +787,17 @@ function loadpage(page){
 	    		  $('#submitGenerate').click(function() { generateCodes($('#numberOfNewCodes').val()) });
 	    		  $('#submitClearUnused').click(function() { clearUnusedCodes(0) });
 	    		  $('#submitPrintUnusedCodes').click(function() { printUnusedCodes() });
-	    		  $('#submitMakeEvent').click(function() { makeEvent($('#unusedcodelist').children("option:selected").val()) });
+	    		  $('#submitMakeEvent').click(function() { makeEvent( $('#unusedcodelist').children("option:selected").val() ) });
 	    		  $('#submitStartProcessing').click(function() { startProcessingImages() });
+	    		  $('#submitViewSelectedCode').click(function() { viewSelectedCode( $('#usedcodelist').children("option:selected").text() )});
 	    		  
 	    		  break;
 	    	  case 'events.php':
 	    		  getEvents();
 	    		  
 	    		  $('#submitEditEvent').click(function() { editEvent(); });
+	    		  $('#submitViewSelectedEvent').click(function() { viewSelectedCode( $('#eventCode').val() ) });
+	    		  $('#submitViewSelectedCode').click(function() { viewSelectedCode( $('#usedcodelist').children("option:selected").text() )});
 	    		  
 				// add events for eventlist
 				$('#eventlist').on('click', function () {

@@ -200,8 +200,15 @@ function postToApi(dataToPost) {
 					break;
 				case 250:
 					// Gallery obtained
-					
 					parseObtainedGalleryData(data);
+					break;
+				case 251:
+					// Gallery is available
+					
+					if ( data.response.hasOwnProperty('message') ) {
+						window.location.replace('album/' + data.response.message);
+					}
+					
 					break;
 				//field is empty but mandatory
 				case 103:
@@ -241,9 +248,18 @@ function postToApi(dataToPost) {
 
 function parseObtainedGalleryData(data) 
 {
-	
 	// First clear content
 	$('#gallery').html('');
+	
+	// If event add header and description
+	if ( data.response.message.hasOwnProperty('event') ) {
+		if ( data.response.message.event.hasOwnProperty('type') ) {
+			if ( data.response.message.event.type == 1 ) {
+				$('#eventheader').text(data.response.message.event.name);
+				$('#eventdescr').text(data.response.message.event.descr);			
+			}
+		}
+	}
 	
 	// count images
 	let noi = 0; // number of images
@@ -253,27 +269,19 @@ function parseObtainedGalleryData(data)
 	// calculate how many images in vertical
 	let imgv = noi / NUMBER_OF_IMAGES_IN_ROW; 
 	let fullrows = Math.round(imgv);
-	console.log("Img v: " + imgv);
-	console.log("Full rows: " + fullrows);
+	// console.log("Img v: " + imgv);
+	// console.log("Full rows: " + fullrows);
 	
 	let i = 1;
 	
 	for (let id of Object.keys(data.response.message.image)) {
 		if ( i == 1 || i % fullrows == 0) {
-			console.log("i % fullrows: " + i % fullrows );
-			console.log("i: " + i );
+			// console.log("i % fullrows: " + i % fullrows );
+			// console.log("i: " + i );
 			$('#gallery').append('<div class="column"></div>');
 		}
-		//$('#gallery').append
-		console.log("joo");
 		$('#gallery > div:last').append('<a target="_blank" href="'+data.response.message.image[id].original+'"><img src="'+data.response.message.image[id].medium+'" style="width: 98%"></a>');
 		i++;
-		
-		/*if ( i == fullrows-1 ) {
-			console.log("column loppu");
-			$('#gallery').append('</div>');
-		}
-		*/
 	}
 }
 
@@ -281,7 +289,8 @@ function parseObtainedGalleryData(data)
  * 
  * @returns
  */
-function doLogout() {
+function doLogout() 
+{
 	sessionStorage.removeItem('accessToken');
 	sessionStorage.removeItem('refreshToken');
 	window.location.replace('');
@@ -294,7 +303,8 @@ function doLogout() {
  * POSTs ajax login request to api and handles feedback
  * 
  */
-function doLogin() {
+function doLogin() 
+{
 	let username = $('#textusername').val();
 	let password = $('#textpassword').val();
 	

@@ -805,14 +805,33 @@ class qr extends Api {
      */
     public function getGallery() 
     {
-        //SELECT i.Id, i.HashId, i.NameOnDisk FROM images i, hash h WHERE h.Hash = "C6DEFC9E" AND i.HashId = h.Id AND i.Deleted = 0;
+
         try {
             $db = new Database();
             $this->database = $db->connect();
             
             $hash = $this->getEventCode();
             
-            $sql = "SELECT i.Id, i.HashId, h.Hash, i.NameOnDisk FROM images i, hash h WHERE h.Hash = :hash AND i.HashId = h.Id AND i.Deleted = 0";
+            // first get type of hash. Is it event or regular gallery
+            $sql = "SELECT Type, Name, Descr FROM hash WHERE Disabled = 0 AND Hash = :hash";
+            
+            $stmt = $this->database->prepare($sql);
+            
+            $stmt->bindParam(":hash", $hash);
+            
+            $stmt->execute();
+            
+            $type = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            
+            // if type is 1 = event get all qr-code images which belongs to an event. Otherwise just get one gallery. 
+            if ( isset($type) ) {
+                if ( $type['Type'] == 1 ) {
+                    $sql = "SELECT DISTINCT i.Id, i.HashId, ha.Hash, i.NameOnDisk FROM hash h, hash ha, images i WHERE h.Id = ha.FatherId AND h.Hash = :hash AND i.HashId = ha.Id AND i.Deleted = 0";
+                } else {
+                    $sql = "SELECT i.Id, i.HashId, h.Hash, i.NameOnDisk FROM images i, hash h WHERE h.Hash = :hash AND i.HashId = h.Id AND i.Deleted = 0";
+                }
+            }
             
             $stmt = $this->database->prepare($sql);
             
@@ -821,8 +840,15 @@ class qr extends Api {
             $stmt->execute();
             
             //$stmt->debugDumpParams(); //debug
+
+            //if ( $type['Type'] == 1) {
+                $this->images['event']['type'] = $type['Type'];
+                $this->images['event']['name'] = $type['Name'];
+                $this->images['event']['descr'] = $type['Descr'];
+            //}
             
             while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+
                 $this->images['image'][$row['Id']]['id'] = $row['Id'];
                 $this->images['image'][$row['Id']]['hash'] = $row['Hash'];
                 $this->images['image'][$row['Id']]['thumbnail'] = IMG_PATH.IMG_SUBPATH_THUMBNAIL.$row['NameOnDisk'];

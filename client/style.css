@@ -1,6 +1,7 @@
 
 body {
 	background-color: #3aafa9;
+	/*background-color: #ffffff;*/
 	font-family: LeagueGothic, Verdana;
 	font-size: 150%;
 	margin: 0;
@@ -114,6 +115,7 @@ nav li:hover:not(.active) {
 	padding: 0 4px;
 }
 .column {
+  -ms-flex: 23%;
   flex: 23%;
   max-width: 23%;
   padding: 0 4px;
@@ -122,4 +124,26 @@ nav li:hover:not(.active) {
   margin-top: 8px;
   vertical-align: middle;
   width: 98%;
+  -webkit-filter: grayscale(80%);
+  filter: grayscale(80%);
+}
+.column img:hover {
+  -webkit-filter: grayscale(0%);
+  filter: grayscale(0%);
+}
+
+@media screen and (max-width: 800px) {
+  .column {
+    -ms-flex: 48%;
+    flex: 48%;
+    max-width: 48%;
+  }
+}
+
+@media screen and (max-width: 600px) {
+  .column {
+    -ms-flex: 100%;
+    flex: 100%;
+    max-width: 100%;
+  }
 }

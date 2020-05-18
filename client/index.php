@@ -10,33 +10,6 @@
  *
  */
 
-/*
-
-// TODO: proper url rewrite, for now moved to album/index.php
-
-$load = null;
-// To handle between login screen and gallery/events
-// remove last slash if available
-$path = rtrim($_SERVER['REQUEST_URI'], '/');
-
-$elements = explode('/', $path);
-
-//echo(count($elements));
-print_r($elements);
-// if elements empty
-if ( empty($elements[3]) ) {
-    $load = 'login.php';
-} else {
-    switch($elements[3]) {
-    case 'album':        
-        $load = 'album.php';
-        break;
-    default:
-        header('HTTP/1.1 404 Not Found');
-        //exit("");
-    }
-}
-*/
 ?>
 <!DOCTYPE html>
 <html>
