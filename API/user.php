@@ -183,16 +183,26 @@ class user {
         $db = new Database();
         $this->database = $db->connect();
         
-        $sql = "SELECT p.Id, pt.Type, p.Descr, p.Label, up.Authorized FROM 
-                                                                        user_perm up, 
-                                                                        permissions p, 
-                                                                        permission_type pt WHERE 
-
-                                                                        up.UserId = :userid AND 
-                                                                        up.PermId = p.Id AND 
-                                                                        pt.id = p.PermType
-                
-                                                                        ORDER BY p.Order asc";
+        // if id is zero we obtain all available permissions
+        if ( $id !=  0 ) {
+            $sql = "SELECT p.Id, pt.Type, p.Descr, p.Label, up.Authorized FROM 
+                                                                            user_perm up, 
+                                                                            permissions p, 
+                                                                            permission_type pt WHERE 
+    
+                                                                            up.UserId = :userid AND 
+                                                                            up.PermId = p.Id AND 
+                                                                            pt.id = p.PermType
+                    
+                                                                            ORDER BY p.Order asc";
+        } else {
+            $sql = "SELECT p.Id, pt.Type, p.Descr, p.Label, 0 as Authorized FROM 
+                                                                              permissions p, 
+                                                                              permission_type pt 
+                                                                            WHERE 
+                                                                              pt.id = p.PermType 
+                                                                            ORDER BY p.Order asc";
+        }
         $userId = $id;
         $stmt = $this->database->prepare($sql);
         $stmt->bindParam(":userid", $id);

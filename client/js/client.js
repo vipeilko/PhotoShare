@@ -22,6 +22,13 @@ $(document).ready(function() {
 	console.log(sessionStorage.getItem('accessToken')); // debug
 	console.log(sessionStorage.getItem('refreshToken')); // debug
 
+	UrlExists(apiUrl, function(status){
+	    if(status === 404){
+	      $("body").html('<h1>Service not configured</h1>');
+	    }
+	});
+	
+	
 	// if tokens is already issued display a bit different links
 	if ( sessionStorage.getItem('accessToken') != null && sessionStorage.getItem('refreshToken') != null ) {
 		//console.log("true"); //debug
@@ -114,6 +121,18 @@ function validateRefreshToken()
 			//not recieving access and refrestokens
 		}
 	}
+}
+
+function UrlExists(url, cb){
+    jQuery.ajax({
+        url:      url,
+        dataType: 'text',
+        type:     'POST',
+        complete:  function(xhr){
+            if(typeof cb === 'function')
+               cb.apply(this, [xhr.status]);
+        }
+    });
 }
 
 /**
@@ -263,8 +282,10 @@ function parseObtainedGalleryData(data)
 	
 	// count images
 	let noi = 0; // number of images
-	for (let id of Object.keys(data.response.message.image)) {
-		noi++;
+	if ( data.response.message.hasOwnProperty('image') ) {
+		for (let id of Object.keys(data.response.message.image)) {
+			noi++;
+		}
 	}
 	// calculate how many images in vertical
 	let imgv = noi / NUMBER_OF_IMAGES_IN_ROW; 
@@ -274,14 +295,16 @@ function parseObtainedGalleryData(data)
 	
 	let i = 1;
 	
-	for (let id of Object.keys(data.response.message.image)) {
-		if ( i == 1 || i % fullrows == 0) {
-			// console.log("i % fullrows: " + i % fullrows );
-			// console.log("i: " + i );
-			$('#gallery').append('<div class="column"></div>');
+	if ( data.response.message.hasOwnProperty('image') ) {
+		for (let id of Object.keys(data.response.message.image)) {
+			if ( i == 1 || i % fullrows == 0) {
+				// console.log("i % fullrows: " + i % fullrows );
+				// console.log("i: " + i );
+				$('#gallery').append('<div class="column"></div>');
+			}
+			$('#gallery > div:last').append('<a target="_blank" href="'+data.response.message.image[id].original+'"><img src="'+data.response.message.image[id].medium+'" style="width: 98%"></a>');
+			i++;
 		}
-		$('#gallery > div:last').append('<a target="_blank" href="'+data.response.message.image[id].original+'"><img src="'+data.response.message.image[id].medium+'" style="width: 98%"></a>');
-		i++;
 	}
 }
 

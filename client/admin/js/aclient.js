@@ -17,6 +17,9 @@ var type = null;										// Stores latest response type from API
 var dataToPostAfterRefreshingTokens = null;				// Stores last request that failed because of experied token
 var userdata = null;									// Stores userdata
 var userpermissions = null;								// Stores userpermissions
+var processingEvent = false;							// Stores if we are processing events
+var processingInterval = 60;						 	// Time to wait before next automatic processing request
+var processingCode = null;								// current code to process
 
 //Document loaded
 $(document).ready(function() {
@@ -72,6 +75,7 @@ $(document).ready(function() {
 	if ( $("#code").length ) {
 		$("#code").click(function () { loadpage('code.php') });	
 	}
+	
 });
 
 /**
@@ -102,6 +106,17 @@ $(document).ajaxStop(function() {
 		case 201:
 			//refreshtoken updated, let's do what we meant to do
 			postToApi(dataToPostAfterRefreshingTokens);			
+			break;
+		
+		case 220:
+			// finished processing images
+			
+			// if processing is active start again
+			if (processingEvent) {
+				insertEventLog("Next request in " + processingInterval + " seconds...");
+				setTimeout(startProcessingEvent, (processingInterval*1000));
+			}
+			
 			break;
 			
 		case 221:
@@ -263,7 +278,23 @@ function postToApi(dataToPost) {
 			
 			//lets read response
 			switch (code) {
-				 
+			
+				case 114:
+					// QR code found in image is not in our db
+					// if processing event is active log this
+					if ( processingEvent ) {
+						insertEventLog(data.error.message);
+					}
+					processingEvent = false;
+					break;
+				case 150:
+					// no right to process event
+					if ( processingEvent ) {
+						insertEventLog(data.error.message);
+					}
+					processingEvent = false;
+					break;
+			
 				case 200:
 					// handle ok responses here
 					// a new switch case?
@@ -283,6 +314,13 @@ function postToApi(dataToPost) {
 							return false;
 						}
 
+					break;
+					
+				case 220:
+					// processing images/events finished
+					insertEventLog(data.response.message);
+					
+					//data.response.message
 					break;
 				case 221:
 					// Used codes list
@@ -322,6 +360,13 @@ function postToApi(dataToPost) {
 				case 303:
 					doLogout();
 					break;
+				case 305:
+					if ( processingEvent ) {
+						insertEventLog(data.error.message);
+					}
+					
+					break;
+
 				//field is empty but mandatory
 				case 103:
 				//username error
@@ -735,7 +780,7 @@ function getCodesTiedToEvent ()
 					"id":$('#eventlist').children("option:selected").val()
 				}
 	};
-postToApi(request);
+	postToApi(request);
 }
 
 function viewSelectedCode(code) 
@@ -748,10 +793,44 @@ function startProcessingImages()
 	let request = {
 			"serviceName":"startProcessingImages",
 			"param":{
-				"zero":0
+				"code":null
 			}
+	};
+	postToApi(request);
+}
+
+function startProcessingEvent()
+{
+	
+	insertEventLog('Starting to process event...');
+	insertEventLog('Processing to code: ' + processingCode );
+	
+	let request = {
+			"serviceName":"startProcessingImages",
+			"param":{
+				"code":processingCode
+			}
+	};
+	postToApi(request);	
+}
+
+function insertEventLog(text) 
+{
+	let datetime = getTime();
+	$('#log').append(getTime() + ' ' + text + '\n').scrollBottom();
+}
+
+$.fn.scrollBottom = function() {
+	  return $(this).scrollTop($(this)[0].scrollHeight);
 };
-postToApi(request);
+
+function getTime() 
+{
+	let today = new Date();
+	let date = ('0'+ today.getDate()).slice(-2) + '.' + ('0'+ (today.getMonth()+1) ).slice(-2) + '.' + today.getFullYear();
+	let time = ('0'+ today.getHours()).slice(-2) + ":" + ('0'+ today.getMinutes()).slice(-2) + ":" + ('0'+today.getSeconds()).slice(-2);
+	let dateTime = date+' '+time;
+	return dateTime;
 }
 
 /**
@@ -779,6 +858,7 @@ function loadpage(page){
 		    	  
 		    	  $('#userlist').children("option:selected").val();
 		    	  
+		    	  getPermissionByUserId(0);
 		    	  getUsers();
 	    		  break;
 	    	  case 'code.php':
@@ -798,12 +878,15 @@ function loadpage(page){
 	    		  $('#submitEditEvent').click(function() { editEvent(); });
 	    		  $('#submitViewSelectedEvent').click(function() { viewSelectedCode( $('#eventCode').val() ) });
 	    		  $('#submitViewSelectedCode').click(function() { viewSelectedCode( $('#usedcodelist').children("option:selected").text() )});
+	    		  $('#submitStartProcessingEvent').click(function() { processingCode = $('#eventCode').val(); startProcessingEvent() });
+	    		  $('#submitStartProcessingEvent').click(function() { processingEvent = true; });
+	    		  
 	    		  
 				// add events for eventlist
 				$('#eventlist').on('click', function () {
 					getCodesTiedToEvent();
 				});
-	    		  
+				
 	    		  break;
 	    	 default:
 	    		 break;

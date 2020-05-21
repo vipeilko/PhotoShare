@@ -238,8 +238,13 @@ class qr extends Api {
     /**
      * 
      */
-    public function processImages()
+    public function processImages($userid)
     {
+        $fatherId = 0;
+        if ( ($this->getEventCode() != null) && $this->checkGalleryAvailability() ) {
+            $fatherId = $this->getHashId($this->getEventCode());
+        }
+        
         //get array of images
         $imgs = glob(IMAGE_STORAGE_PATH . "*.{Jpg,jpg,JPG,png,PNG}", GLOB_BRACE);
         //print_r($imgs);
@@ -274,7 +279,13 @@ class qr extends Api {
         $this->database = $db->connect();
         
         // Start processing
-        $i = 0;
+        // first get last code which were under process
+        $imgbelongstocode = $this->getLastUsedHash($userid);
+        $imghashid = $this->getHashId($imgbelongstocode);
+        //echo ('$imgbelongstocode: '. $imgbelongstocode ."\n");
+        //echo ('$imghashid: '. $imghashid ."\n");
+        
+        $i = 0; // count images processed
         foreach ($temp as $item) {
             $path = pathinfo($item['name']);
             // print_r ($path); //debug
@@ -309,27 +320,28 @@ class qr extends Api {
                     $dbHash = $stmt->fetch(PDO::FETCH_ASSOC);
                     
                     if (! is_array($dbHash)) {
-                        // TODO: uncomment when integrating with API throwException or warning
-                        die("This QR-code doesn't exists our database.");
-                        //$this->throwException(QR_CODE_DO_NOT_EXIST, "This QR-code doesn't exists our database.");
+                       
+                        //die("This QR-code doesn't exists our database.");
+                        $this->throwException(QR_CODE_DO_NOT_EXIST, "This QR-code doesn't exists our database.");
                     }
-                    
+
                     //store last qr code
                     $imgbelongstocode = $dbHash['Hash'];
                     $imghashid = $dbHash['Id'];
                     //echo ("Image belongs to qr-code : " . $imgbelongstocode . "<br> \n"); //debug
+               
                 } catch (Exception $e) {
-                    die("DB ERROR: " . $e->getMessage());
-                    //TODO: uncomment when integrating with API
-                    //$this->throwException(DATABASE_ERROR, "Database select error.");
-                }   
+                    //die("DB ERROR: " . $e->getMessage());
+                    
+                    $this->throwException(DATABASE_ERROR, "Database select error.");
+                }
+     
             }
             //we have to rename image, include hash in image name
             rename($fullSize,       IMAGE_STORAGE_PATH .    IMG_SUBPATH_FULL_SIZE . $imgbelongstocode . "_" . $path['basename']);
             rename($mediumSize,     IMAGE_STORAGE_PATH .    IMG_SUBPATH_MEDIUM .    $imgbelongstocode . "_" . $path['basename']);
             rename($thumbnail,      IMAGE_STORAGE_PATH .    IMG_SUBPATH_THUMBNAIL . $imgbelongstocode . "_" . $path['basename']);
             
-            //TODO: add image to database
             try {
                 $sql = ("INSERT INTO images(HashId,
                                         NameOnDisk,
@@ -345,24 +357,37 @@ class qr extends Api {
                 $createdOn = $date->format('Y-m-d H:i:s');;
                 $deleted = 0;
                 $nameondisk = $imgbelongstocode . "_" . $path['basename'];
-                    
+                
+                //echo("INFO: " . $imghashid.$nameondisk.$deleted.$createdOn);
+                
                 $stmt->bindParam(':HashId',     $imghashid,         PDO::PARAM_STR);
                 $stmt->bindParam(':NameOnDisk', $nameondisk,        PDO::PARAM_STR);
                 $stmt->bindParam(':Deleted',    $deleted,           PDO::PARAM_STR);
                 $stmt->bindParam(':CreatedOn',  $createdOn,         PDO::PARAM_STR);
                 
                 $stmt->execute();
-                
-                
+                //$stmt->debugDumpParams(); //debug
+                // if fatherid is something else than zero. Lets combine hash to an event
+                // Update hash fatherid to an event id
+                if ( $fatherId != 0 ) {
+                    //echo ("UPDATE FATHERID: ". $fatherId ."\n");
+                    //echo ('$imghashid '. $imghashid ."\n");
+                    $sql = ("UPDATE hash SET FatherId = :fatherid WHERE Id = :hashid");
+                    $stmt = $this->database->prepare($sql);
+                    $stmt->bindParam(':hashid',    $imghashid,         PDO::PARAM_STR);
+                    $stmt->bindParam(':fatherid',  $fatherId,          PDO::PARAM_STR);
+                    //$stmt->debugDumpParams(); //debug
+                    $stmt->execute();
+                }
+  
             } catch (Exception $e) {
-                //TODO: uncomment when integratin with API
-                $this->throwException(DATABASE_ERROR, "Database insert error.");
+                $this->throwException(DATABASE_ERROR, "Database insert error..");
             }
             
             // if KEEP_ORIGINAL_PHOTO is true let's move it to IMG_SUBPATH_ORIGINAL folder, otherwise delete it
             if ( KEEP_ORIGINAL_PHOTO ) {
+                // Line below: do not rename orginal to helps with debug and testing
                 //rename ($path['dirname'] ."/". $path['basename'], $path['dirname'] . "/" . IMG_SUBPATH_ORIGINAL . $path['basename']);
-                //TODO: comment above and uncomment below when in production to enable orginal photo. Easier way to test when using above.
                 rename ($path['dirname'] ."/". $path['basename'], $path['dirname'] . "/" . IMG_SUBPATH_ORIGINAL . $imgbelongstocode . "_" . $path['basename']);
             } else {
                 unlink ( $path['dirname'] ."/". $path['basename'] );
@@ -371,12 +396,77 @@ class qr extends Api {
             $i++;
         } // END processing / end foreach
         
+        
+        // Update db for last used ID
+        $this->setLastUsedHash($userid, $imgbelongstocode);
+        
         // return number of images were processed
         return $i . " image(s) were processed";
         
-        $db->disconnect();
-        //TODO: Save to db information from last used HasId and/or hash 
         
+        $db->disconnect();
+
+        
+    }
+    
+    public function getHashId($hash) 
+    {
+        $db = new Database();
+        $this->database = $db->connect();
+        
+        $sql = ("SELECT Id FROM hash WHERE Hash = :hash");
+        
+        $stmt = $this->database->prepare($sql);
+        $stmt->bindParam(':hash',   $hash,        PDO::PARAM_STR);
+       
+        $stmt->execute();
+        
+        $response = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        return $response['Id'];
+    }
+    
+    public function getLastUsedHash($userid) 
+    {
+        $db = new Database();
+        $this->database = $db->connect();
+        
+        // we want get setting which is named "lasthash"
+        $stype = "lasthash";
+        $sql = ("SELECT Value FROM Settings WHERE UserId = :userid AND SettingType = :stype");
+        
+        $stmt = $this->database->prepare($sql);
+        $stmt->bindParam(':userid',   $userid);
+        $stmt->bindParam(':stype',    $stype);
+        
+        $stmt->execute();
+        
+        $hash = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        //$stmt->debugDumpParams(); //debug
+        
+        return $hash['Value'];
+    }
+    
+    public function setLastUsedHash($userid, $lasthash)
+    {
+        $db = new Database();
+        $this->database = $db->connect();
+        
+        // we want get setting which is named "lasthash"
+        $stype = "lasthash";
+        $sql = ("UPDATE Settings SET Value = :value WHERE UserId = :userid AND SettingType = :stype");
+        
+        $stmt = $this->database->prepare($sql);
+        $stmt->bindParam(':userid',   $userid);
+        $stmt->bindParam(':value',    $lasthash);
+        $stmt->bindParam(':stype',    $stype);
+        //$stmt->debugDumpParams(); //debug
+        
+        $stmt->execute();
+        
+        
+        return true;
     }
     
     /**
@@ -848,7 +938,6 @@ class qr extends Api {
             //}
             
             while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-
                 $this->images['image'][$row['Id']]['id'] = $row['Id'];
                 $this->images['image'][$row['Id']]['hash'] = $row['Hash'];
                 $this->images['image'][$row['Id']]['thumbnail'] = IMG_PATH.IMG_SUBPATH_THUMBNAIL.$row['NameOnDisk'];
@@ -856,6 +945,25 @@ class qr extends Api {
                 $this->images['image'][$row['Id']]['fullsize'] = IMG_PATH.IMG_SUBPATH_FULL_SIZE.$row['NameOnDisk'];
                 $this->images['image'][$row['Id']]['original'] = IMG_PATH.IMG_SUBPATH_ORIGINAL.$row['NameOnDisk'];
             }
+            
+            // if Event get images that are directly assigned to event. (No code)
+            if ( $type['Type'] == 1 ) {
+                $sql = "SELECT i.Id, i.HashId, h.Hash, i.NameOnDisk FROM images i, hash h WHERE h.Hash = :hash AND i.HashId = h.Id AND i.Deleted = 0";
+                $stmt = $this->database->prepare($sql);
+                
+                $stmt->bindParam(":hash", $hash);
+                
+                $stmt->execute();
+                while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                    $this->images['image'][$row['Id']]['id'] = $row['Id'];
+                    $this->images['image'][$row['Id']]['hash'] = $row['Hash'];
+                    $this->images['image'][$row['Id']]['thumbnail'] = IMG_PATH.IMG_SUBPATH_THUMBNAIL.$row['NameOnDisk'];
+                    $this->images['image'][$row['Id']]['medium'] = IMG_PATH.IMG_SUBPATH_MEDIUM.$row['NameOnDisk'];
+                    $this->images['image'][$row['Id']]['fullsize'] = IMG_PATH.IMG_SUBPATH_FULL_SIZE.$row['NameOnDisk'];
+                    $this->images['image'][$row['Id']]['original'] = IMG_PATH.IMG_SUBPATH_ORIGINAL.$row['NameOnDisk'];
+                }
+            }
+            
             //print_r($this->images);
             if ( !empty($this->images) ) { 
                 return true;

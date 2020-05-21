@@ -101,7 +101,7 @@ class Api extends Rest
     public function getUsedCodes()
     {
         // check if user has permission to get codes
-        if ( !$this->user->checkPrivilige(PERM_CODE, PERM_DESCR_LABEL_CODE) ) {
+        if ( !$this->user->checkPrivilige(PERM_CODE, PERM_DESCR_GENERATE_CODE) ) {
             $this->throwException(USER_HAS_NO_RIGHT, "User has no right to get used codes");
         }
         //$this->response(QR_SUCCESS_GET_USED_HASHES, $this->qr->getUsedHashes());
@@ -116,7 +116,7 @@ class Api extends Rest
     public function getUnusedCodes()
     {
         // check if user has permission to get codes
-        if ( !$this->user->checkPrivilige(PERM_CODE, PERM_DESCR_LABEL_CODE) ) {
+        if ( !$this->user->checkPrivilige(PERM_CODE, PERM_DESCR_GENERATE_CODE) ) {
             $this->throwException(USER_HAS_NO_RIGHT, "User has no right to get unused codes");
         }
         //$this->response(QR_SUCCESS_GET_UNUSED_HASHES, $this->qr->getUsedHashes());
@@ -337,7 +337,12 @@ class Api extends Rest
     public function getUserPermById() 
     {
         // validate input
-        $id = $this->validateParameter('userid', $this->param['userid'], INTEGER);
+        if ( $this->param['userid'] != 0) {
+            $id = $this->validateParameter('userid', $this->param['userid'], INTEGER);
+        } else {
+            $id = $this->param['userid'];
+        }
+        
         $this->response(SUCCESS_RESPONSE, $this->user->getUserPerm($id));   
     }
     
@@ -374,14 +379,26 @@ class Api extends Rest
     
     public function startProcessingImages() 
     {
-        // check if user has permission to get codes
+        // if code is null. Then normal processing and no validation
+        if ( !($this->param['code'] == null) ) {
+
+            // Parameter is required as a string
+            $this->validateParameter('code', $this->param['code'], STRING);
+            $this->qr->setEventCode($this->param['code']);
+        }
+        
+        // check if user has permission to process codes
         if ( !$this->user->checkPrivilige(PERM_CODE, PERM_DESCR_PROCESS_CODE) ) {
             $this->throwException(USER_HAS_NO_RIGHT, "User has no right to process codes");
         }
+        
         //$this->response(QR_SUCCESS_GET_UNUSED_HASHES, $this->qr->getUsedHashes());
         
-        $ans = $this->qr->processImages();
-        
+        if ( !($this->param['code'] == null) ) {
+            $ans = $this->qr->processImages($this->user->getUserId());
+        } else {
+            $ans = $this->qr->processImages($this->user->getUserId());
+        }
         // returns 220 so client knows to ask more
         $this->response(QR_SUCCESS_PROCESS_IMAGES, $ans);
         
