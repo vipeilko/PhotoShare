@@ -2,24 +2,25 @@
 /**
  * Rest() 
  * 
- * @version 0.0.2
+ * @version 1.0
  * @author Ville Kouhia
  *
  * Changelog
- *  + 15.2.2020 First implementation
- *  + 16.2.2020 Cleaned code a bit and more comments
- *  + 17.2.2020 Added validateRefreshToken, still in process
- *              moved db connection introduction from __construct to function
- *  + 18.2.2020 Continued refreshtoken handling
- *  + 19.2.2020 RefreshToken db connections and handling
- *  + 20.2.2020 Finnished refreshToken. User can't renew tokens forever anymore with refreshToken. 
- *              From first request of tokens user needs to pass credentials again in AGE_OF_REFRESH_TOKEN 
- *              seconds. Default 86 400 seconds or 1 day. More specific throw exceptions on database connections.
- *  + 27.3.2020 A small update to responses between login ok 200 and refreshToken uptate. Makes it easier to handle on client side
- *              asyncrounous ajax calls.
- *  + 02.4.2020 User class is now declared here for software wide use. Added user related functions.
- *  + 12.4.2020 Add and edit user
- *  + 24.4.2020 get/generate/clear/print codes
+ *  + 15.02.2020 First implementation
+ *  + 16.02.2020 Cleaned code a bit and more comments
+ *  + 17.02.2020 Added validateRefreshToken, still in process
+ *               moved db connection introduction from __construct to function
+ *  + 18.02.2020 Continued refreshtoken handling
+ *  + 19.02.2020 RefreshToken db connections and handling
+ *  + 20.02.2020 Finnished refreshToken. User can't renew tokens forever anymore with refreshToken. 
+ *               From first request of tokens user needs to pass credentials again in AGE_OF_REFRESH_TOKEN 
+ *               seconds. Default 86 400 seconds or 1 day. More specific throw exceptions on database connections.
+ *  + 27.03.2020 A small update to responses between login ok 200 and refreshToken uptate. Makes it easier to handle on client side
+ *               asyncrounous ajax calls.
+ *  + 02.04.2020 User class is now declared here for software wide use. Added user related functions.
+ *  + 12.04.2020 Add and edit user
+ *  + 24.04.2020 get/generate/clear/print codes
+ *  + 05.06.2020 Fist release version 1.0
  *  
  */
 use Firebase\JWT\JWT;
@@ -30,10 +31,18 @@ class Rest
 {
     protected $request;         // contains http post inputstream
     protected $serviceName;     // contains requested service name
-    protected $param;           // cointains parameters in request
+    protected $param;           // contains parameters in request
     
-    protected user $user;
+    protected user $user;       // contains current user 
     
+    /**
+     * Constructor defines operations that requested service needs
+     * If service requires authorization it is needed to be defined here
+     * All services which is added must be added to this constructor as well, 
+     * otherwise service is not available
+     * 
+     * 
+     */
     public function __construct()
     {
         
@@ -96,7 +105,7 @@ class Rest
             case "isGalleryAvailable":
                 break;
             default:
-                //Should not get here ever because this is already handeled by processApi()
+                //If service is allready implemented but not list above we get this error
                 $this->throwException(API_DOES_NOT_EXIST, "API does not exist.");
         }
         
@@ -275,23 +284,28 @@ class Rest
         //echo 'Database connection status after query: ' . $this->database->getAttribute(PDO::ATTR_CONNECTION_STATUS) ."\n"; // For debugg
         // DB UPDATE OF ACCESSTOKEN STARTS FROM HERE
         $tokenType = TOKEN_TYPE_ACCESS;
-        $sql = null;
-        $stmt = null;
-        $count = null;
-        $sql = ("SELECT UserId FROM tokens WHERE
-                                    UserId = :UserId AND
-                                    TokenType = :TokenType");
         
-        $stmt = $this->database->prepare($sql);
-        $stmt->bindParam(':UserId',       $userid,     PDO::PARAM_STR);
-        $stmt->bindParam(':TokenType',    $tokenType,  PDO::PARAM_STR);
-        
-        $stmt->execute();
-        $count = $stmt->rowCount();
-        //echo("rowCount: " . $count . "\n"); //debug
-        
-        if ( $count > 1 ) {
-            $this->throwException(TOO_MANY_TOKENS, "Too many tokens. Hacking?");
+            $sql = null;
+            $stmt = null;
+            $count = null;
+        try {
+            $sql = ("SELECT UserId FROM tokens WHERE
+                                        UserId = :UserId AND
+                                        TokenType = :TokenType");
+            
+            $stmt = $this->database->prepare($sql);
+            $stmt->bindParam(':UserId',       $userid,     PDO::PARAM_STR);
+            $stmt->bindParam(':TokenType',    $tokenType,  PDO::PARAM_STR);
+            
+            $stmt->execute();
+            $count = $stmt->rowCount();
+            //echo("rowCount: " . $count . "\n"); //debug
+            
+            if ( $count > 1 ) {
+                $this->throwException(TOO_MANY_TOKENS, "Too many tokens. Hacking?");
+            }
+        } catch (Exception $e) {
+            $this->throwException(DATABASE_ERROR, "Database select error.");
         }
         if ( $count == 1 ) {
             // if only one found, lets update it
@@ -472,10 +486,14 @@ class Rest
             
             //if validation has passed all above we still have to check if user is not disabled
             $sql = null;
-            $sql = $this->database->prepare("SELECT Id, Disabled FROM users WHERE Id = :id");
-            $sql->bindParam(":id", $dbToken['UserId']);
-            $sql->execute();
-            $user = $sql->fetch(PDO::FETCH_ASSOC);
+            try {
+                $sql = $this->database->prepare("SELECT Id, Disabled FROM users WHERE Id = :id");
+                $sql->bindParam(":id", $dbToken['UserId']);
+                $sql->execute();
+                $user = $sql->fetch(PDO::FETCH_ASSOC);
+            } catch (Exception $e) {
+                $this->throwException(DATABASE_ERROR, "Database select error.");
+            }
             
             if ($user['Disabled'] == 1 ) {
                 $this->response(USER_IS_DISABLED, "This user is disabled.");
@@ -507,12 +525,16 @@ class Rest
             $payload = JWT::decode($token, API_ACCESS_TOKEN_KEY, [''.API_ALGORITHM.'']);
             
             //moved SQL connection from __construct(). At least do not make so many connections to database. 
-            $db = new Database();
-            $this->database = $db->connect();
-            $sql = $this->database->prepare("SELECT Id, Disabled FROM users WHERE Id = :id");
-            $sql->bindParam(":id", $payload->userId);
-            $sql->execute();
-            $user = $sql->fetch(PDO::FETCH_ASSOC);
+            try {
+                $db = new Database();
+                $this->database = $db->connect();
+                $sql = $this->database->prepare("SELECT Id, Disabled FROM users WHERE Id = :id");
+                $sql->bindParam(":id", $payload->userId);
+                $sql->execute();
+                $user = $sql->fetch(PDO::FETCH_ASSOC);
+            } catch (Exception $e) {
+                $this->throwException(DATABASE_ERROR, "Database select error.");
+            }
             if (!is_array($user)) {
                 $this->response(INVALID_USER_PASS, "This user is not found in our database");
             }
@@ -585,6 +607,7 @@ class Rest
      * 
      * TODO: warns user that some settings are in "developer mode" for example access token life is too long
      *       database passwords, ect...
+     *       Not implemented yet in version 1.0
      * 
      * @param $code
      * @param $data
@@ -606,6 +629,7 @@ class Rest
      * getAuthorizationHeader
      * TODO: Probalby should use zend engine or similar to handle better getting right information from headers. 
      *       
+     * Gets and Parses authorization header
      * 
      */
     public function getAuthorizationHeader() 

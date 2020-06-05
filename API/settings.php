@@ -20,7 +20,7 @@ define('PASSWORD_COST', 10);                // Defines complexity of password ca
 /*
  * Other settings
  */
-define('PROCESS_TIME_OF_ONE_IMAGE',             5); // Processing time of one image. From original to full-size, medium and thumbnail. Default 5
+define('PROCESS_TIME_OF_ONE_IMAGE',             5); // Processing time of one image in seconds. From original to full-size, medium and thumbnail. Default 5
                                                     // You should run run performanceTest() in qr.php to see how long time is needed to resize and read codes
 define('LENGHT_OF_QR_CODE_HASH',                8); // Defines how many character is used in qr code hash. Default 8. Max 50. HASH is generated in bytes so length is estimated
 define('URL_PATH', 'http://192.168.1.4/PhotoShare/');
@@ -145,11 +145,14 @@ define('QR_CODE_DO_NOT_EXIST',          114);
 define('QR_FAILED_GENERATE_CODES',      120);
 define('QR_FAILED_CLEAR_UNUSED',        121);
 define('QR_FAILED_TO_MODIFY_TYPE',      122);
+define('QR_FAILED_TO_GET_CODES',        123);
 
 define('EVENT_FAILED_TO_EDIT',           130);
 define('EVENT_FAILED_TO_LIST_CODES',     131);
 
 define('GALLERY_NOT_AVAILABLE',          150);
+
+define('FILE_IS_NOT_IMAGE',              160);
 
 
 /**

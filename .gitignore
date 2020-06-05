@@ -54,10 +54,11 @@ API/passwordHash.php
 .settings/org.eclipse.wst.validation.prefs
 .settings/org.eclipse.php.ui.prefs
 *.jpg
+*.png
 /data/images/qr/
 client/font/LeagueGothic-CondensedItalic.otf
 client/font/LeagueGothic-CondensedRegular.otf
 client/font/LeagueGothic-Italic.otf
 client/font/LeagueGothic-Regular.otf
 client/font/SIL Open Font License.txt
-*.pdf
+/data/pdf/*.pdf

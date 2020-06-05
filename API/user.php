@@ -5,9 +5,10 @@
  *  A class to handle users and permissions
  *  
  * @author Ville
+ * @version 1.0
  *
  * 02.04.2020 Integrated to api
- * 
+ * 05.06.2020 Version 1.0
  *
  */
 
@@ -114,7 +115,7 @@ class user {
         $this->database = $db->disconnect(); 
     }
     /**
-     * 
+     * checkPrivilige
      * 
      * @param string $permtype
      * @param string $descr
@@ -138,6 +139,7 @@ class user {
     }
     
     /**
+     * getAllUsers
      * 
      */
     private function getAllUsers() 
@@ -171,6 +173,8 @@ class user {
     }
     
     /**
+     * getUserPermissionById
+     * 
      * 
      */
     private function getUserPermissionById(int $id)
@@ -220,12 +224,8 @@ class user {
     }
     
     
-    public function setUserInformation() 
-    {
-        
-    }
-    
     /**
+     * setUserPermissions
      * 
      * @param array $permissions
      * @return string
@@ -285,9 +285,11 @@ class user {
         
     }
     /**
+     * delete
+     * 
      * Deletes user == disables from database
      * 
-     * 
+     * return true | false
      */
     public function delete() 
     {
@@ -314,81 +316,100 @@ class user {
         }
     }
     
+    /**
+     * addUser
+     * 
+     * @param $password
+     */
     public function addUser($password) 
     {
         
         $passwordHash = password_hash($password, PASSWORD_ARGON2ID, ['cost' => PASSWORD_COST]);
         $password = null;
         
-        $db = new Database();
-        $this->database = $db->connect();
-        
-        $disabled = 0;
-        $date = new DateTime();
-        $createdOn = $date->format('Y-m-d H:i:s');
-        
-        
-        $sql = "INSERT INTO users (Email, Password, FirstName, LastName, Disabled, LastLogin, CreatedOn) VALUES (:email, :password, :firstname, :lastname, :disabled, :timedate, :timedate)";
-        
-        $stmt = $this->database->prepare($sql);
-        $stmt->bindParam(":email", $this->email);
-        $stmt->bindParam(":password", $passwordHash);
-        $stmt->bindParam(":firstname", $this->firstname);
-        $stmt->bindParam(":lastname", $this->lastname);
-        $stmt->bindParam(":disabled", $disabled);
-        $stmt->bindParam(":timedate", $createdOn);
-        
-        $stmt->execute();
-        
-        
-        $this->setUserId($this->database->lastInsertId());
-        
-        // echo ("New userid: " . $this->getUserId() ."\n"); // debug
-        
-        //get all available permissions
-        $sql = "SELECT Id FROM permissions";
-        $stmt = $this->database->prepare($sql);
-        
-        $stmt->execute();
-        $perm_id = array();
-        
-        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-            array_push($perm_id, $row['Id']);
-        }
-        //print_r($perm_id); //debug
-        // then add to database without permit
-        
-        $userid = $this->getUserId();
-        $authorized = 0;
-        
-        foreach ($perm_id as $perm) {
-        //for ($i = 0; $i < count($perm_id); $i++ ) {
-            $sql = "INSERT INTO user_perm (PermId, UserId, Authorized) VALUES (:permid, :userid, :authorized) ";
+        try {
+            $db = new Database();
+            $this->database = $db->connect();
+            
+            $disabled = 0;
+            $date = new DateTime();
+            $createdOn = $date->format('Y-m-d H:i:s');
+            
+            
+            $sql = "INSERT INTO users (Email, Password, FirstName, LastName, Disabled, LastLogin, CreatedOn) VALUES (:email, :password, :firstname, :lastname, :disabled, :timedate, :timedate)";
             
             $stmt = $this->database->prepare($sql);
-            $stmt->bindParam(":userid", $userid);
-            $stmt->bindParam(":permid", $perm);
-            $stmt->bindParam(":authorized", $authorized);
+            $stmt->bindParam(":email", $this->email);
+            $stmt->bindParam(":password", $passwordHash);
+            $stmt->bindParam(":firstname", $this->firstname);
+            $stmt->bindParam(":lastname", $this->lastname);
+            $stmt->bindParam(":disabled", $disabled);
+            $stmt->bindParam(":timedate", $createdOn);
             
             $stmt->execute();
             
+            
+            $this->setUserId($this->database->lastInsertId());
+            
+            // echo ("New userid: " . $this->getUserId() ."\n"); // debug
+            
+            //get all available permissions
+            $sql = "SELECT Id FROM permissions";
+            $stmt = $this->database->prepare($sql);
+            
+            $stmt->execute();
+            $perm_id = array();
+            
+            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                array_push($perm_id, $row['Id']);
+            }
+            //print_r($perm_id); //debug
+            // then add to database without permit
+            
+            $userid = $this->getUserId();
+            $authorized = 0;
+            
+            foreach ($perm_id as $perm) {
+            //for ($i = 0; $i < count($perm_id); $i++ ) {
+                $sql = "INSERT INTO user_perm (PermId, UserId, Authorized) VALUES (:permid, :userid, :authorized) ";
+                
+                $stmt = $this->database->prepare($sql);
+                $stmt->bindParam(":userid", $userid);
+                $stmt->bindParam(":permid", $perm);
+                $stmt->bindParam(":authorized", $authorized);
+                
+                $stmt->execute();
+                
+            }
+        } catch (Exception $e) {
+            $this->throwException(DATABASE_ERROR, $e);
         }
-        
         
                  
     }
     
+    /**
+     * checkEmail
+     * 
+     * 
+     * @param string $email
+     * @return boolean true | false
+     */
     public function checkEmail(string $email) 
     {
-        $db = new Database();
-        $this->database = $db->connect();
-        
-        $sql = "SELECT Email FROM users WHERE Email = :email";
-        $stmt = $this->database->prepare($sql);
-        $stmt->bindParam(":email", $email);
-        
-        $stmt->execute();
-        $count = $stmt->rowCount();
+        try {
+            $db = new Database();
+            $this->database = $db->connect();
+            
+            $sql = "SELECT Email FROM users WHERE Email = :email";
+            $stmt = $this->database->prepare($sql);
+            $stmt->bindParam(":email", $email);
+            
+            $stmt->execute();
+            $count = $stmt->rowCount();
+        } catch (Exception $e) {
+            $this->throwException(DATABASE_ERROR, $e);
+        }
         
         // if only one email is found return true, else something is wrong
         if ( $count == 1 ) {
@@ -398,54 +419,88 @@ class user {
         }
     }
     
+    /**
+     * updateBasicInformation
+     * 
+     * @param string $password
+     */
     public function updateBasicInformation(string $password = null) 
     {
-        
-        $db = new Database();
-        $this->database = $db->connect();
-        
-        if ( !$password == null ) {
-            $sql = "UPDATE users SET password = :password WHERE Id = :userid";
+        try {
+            $db = new Database();
+            $this->database = $db->connect();
+            
+            if ( !$password == null ) {
+                $sql = "UPDATE users SET password = :password WHERE Id = :userid";
+                $stmt = $this->database->prepare($sql);
+                $stmt->bindParam(":userid", $this->userId);
+                $stmt->bindParam(":password", $password);
+                
+                $stmt->execute();
+            }
+            
+            $sql = "UPDATE users SET Email = :email, FirstName = :firstname, LastName = :lastname WHERE Id = :userid";
+            
             $stmt = $this->database->prepare($sql);
             $stmt->bindParam(":userid", $this->userId);
-            $stmt->bindParam(":password", $password);
+            $stmt->bindParam(":email", $this->email);
+            $stmt->bindParam(":firstname", $this->firstname);
+            $stmt->bindParam(":lastname", $this->lastname);
             
             $stmt->execute();
+        } catch (Exception $e) {
+            $this->throwException(DATABASE_ERROR, $e);
         }
-        
-        $sql = "UPDATE users SET Email = :email, FirstName = :firstname, LastName = :lastname WHERE Id = :userid";
-        
-        $stmt = $this->database->prepare($sql);
-        $stmt->bindParam(":userid", $this->userId);
-        $stmt->bindParam(":email", $this->email);
-        $stmt->bindParam(":firstname", $this->firstname);
-        $stmt->bindParam(":lastname", $this->lastname);
-        
-        $stmt->execute();
         
     }
     
+    /**
+     * setEmail
+     * 
+     * @param $email
+     */
     public function setEmail($email) 
     {
         $this->email = $email;
     }
     
+    /**
+     * setLastName
+     * 
+     * @param $lastname
+     */
     public function setLastName($lastname) 
     {
         $this->lastname = $lastname;
     }
     
+    /**
+     * SetFirstName
+     * 
+     * @param $firstname
+     */
     public function SetFirstName($firstname) 
     {
         $this->firstname = $firstname;
     }
     
+    /**
+     * getUserPerm
+     * 
+     * @return lastPerm 
+     * 
+     */
     public function getUserPerm(int $id) 
     {
         $this->getUserPermissionById($id);
         return $this->lastPerm;
     }
     
+    /**
+     * getUsers
+     * 
+     * @return allUsers
+     */
     public function getUsers() 
     {
         $this->getAllUsers();

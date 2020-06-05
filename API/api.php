@@ -1,7 +1,7 @@
 <?php
 /**
  * 
- * @version 0.0.1
+ * @version 1.0
  * @author Ville Kouhia
  * 
  * Changelog
@@ -16,6 +16,7 @@
  *  + 02.04.2020 New functions getRoles and getPermissions
  *  + 12.04.2020 add and edit user
  *  + 24.04.2020 A proper introduction of codes
+ *  + 05.06.2020 First release version 1.0
  *  
  */
 
@@ -37,7 +38,9 @@ class Api extends Rest
     /**
      * generateToken
      * 
-     * Will always generate refreshToken as well for security reasons. If performance problems have to upgrade hardware :)
+     * This verifyes email / password combination. 
+     * Real token generation is done in rest.php
+     * This is only called from login screen.
      * 
      */
     public function generateToken()
@@ -48,14 +51,18 @@ class Api extends Rest
         //Check password if it meet site requirements.
         $password = $this->validateParameter('password', $this->param['password'], PASSWORD);
         
-        //moved from __construct, is this better way?
-        $db = new Database();
-        $this->database = $db->connect();
-        
-        $sql = $this->database->prepare("SELECT Id, Password, Disabled FROM users WHERE email = :email");
-        $sql->bindParam(":email", $email);
-        $sql->execute();
-        $user = $sql->fetch(PDO::FETCH_ASSOC);
+        // Get email matching information from db
+        try {
+            $db = new Database();
+            $this->database = $db->connect();
+            
+            $sql = $this->database->prepare("SELECT Id, Password, Disabled FROM users WHERE email = :email");
+            $sql->bindParam(":email", $email);
+            $sql->execute();
+            $user = $sql->fetch(PDO::FETCH_ASSOC);
+        } catch (Exception $e) {
+            $this->throwException(DATABASE_ERROR, "Database select error.");
+        }
         
         // Check if the email matches in database
         if ( !is_array($user) ) {
@@ -73,14 +80,18 @@ class Api extends Rest
         }
 
         //if everything is ok lets call token generator
-
         $this->user->setUserId($user['Id']);
         $this->generateTokens($this->user->getUserId(), 0, true);
         
     }
     
     /**
+     * generateCodes
      * 
+     * Verify input data
+     * Verify user privileges
+     * Pass input data to real qr-code generator in qr.php 
+     * Return response success / failed
      * 
      */
     public function generateCodes() 
@@ -98,6 +109,15 @@ class Api extends Rest
     }
     
     
+    /**
+     * getUsedCodes
+     * 
+     * Verify input data
+     * Verify user privileges
+     * Get current users codes
+     * Return response success[data] / throwException Failed
+     * 
+     */   
     public function getUsedCodes()
     {
         // check if user has permission to get codes
@@ -106,13 +126,21 @@ class Api extends Rest
         }
         //$this->response(QR_SUCCESS_GET_USED_HASHES, $this->qr->getUsedHashes());
         if ( !($this->qr->getUsedHash($this->user->getUserId())) ) {
-            $this->throwException(666, "jooo");
+            $this->throwException(QR_FAILED_TO_GET_CODES, "Failed to get codes");
         } else {
             $this->response(QR_SUCCESS_GET_USED_HASHES, $this->qr->usedHash());
         }
-        $this->response(SUCCESS_RESPONSE, "ok");
     }
     
+    /**
+     * getUnusedCodes
+     *
+     * Verify input data
+     * Verify user privileges
+     * Get current users codes
+     * Return response success[data] / throwException Failed
+     *
+     */
     public function getUnusedCodes()
     {
         // check if user has permission to get codes
@@ -121,13 +149,21 @@ class Api extends Rest
         }
         //$this->response(QR_SUCCESS_GET_UNUSED_HASHES, $this->qr->getUsedHashes());
         if ( !($this->qr->getUnusedHash($this->user->getUserId())) ) {
-            $this->throwException(666, "jooo");
+            $this->throwException(QR_FAILED_TO_GET_CODES, "Failed to get codes");
         } else {
             $this->response(QR_SUCCESS_GET_UNUSED_HASHES, $this->qr->unusedHash());
         }
-        $this->response(SUCCESS_RESPONSE, "ok");
     }
     
+    /**
+     * clearUnusedCodes
+     *
+     * Verify input data
+     * Verify user privileges
+     * clear current users codes
+     * Return response success / throwException Failed
+     *
+     */
     public function clearUnusedCodes() 
     {
         // check if user has permission to get codes
@@ -142,6 +178,13 @@ class Api extends Rest
         $this->response(QR_SUCCESS_CLEAR_UNUSED, "Successfully cleared unused hashes");
     }
     
+    /**
+     * printUnusedCodes
+     *
+     * Passes information to generate PDF-file which contains all unused QR-codes
+     * Return response success[path to file]
+     *
+     */
     public function printUnusedCodes() 
     {
         
@@ -150,6 +193,15 @@ class Api extends Rest
         $this->response(QR_PDF_GENERATED, $filename);
     }
     
+    /**
+     * eventFromHashId
+     *
+     * Verify input data
+     * Verify user privileges
+     * Makes event from a hash
+     * Return response success / throwException Failed
+     *
+     */
     public function eventFromHashId()
     {
         // check if user has permission to get codes
@@ -160,11 +212,20 @@ class Api extends Rest
        
         // This allows only current user to modify own hash. 
         if ( !$this->qr->makeEventFromHash($this->user->getUserId(), $this->param['hashid']) ) {
-            $this->throwException(QR_FAILED_TO_MODIFY_TYPE, 'Failed to modify qr type');
+            $this->throwException(QR_FAILED_TO_MODIFY_TYPE, 'Failed to modify code type event');
         }
         $this->response(EVENT_SUCCESS_CREATED, 'Event successfully created');
     }
     
+    /**
+     * getEventList
+     *
+     * Verify input data
+     * Verify user privileges
+     * Lists current user events 
+     * Return response success[list] / throwException Failed
+     *
+     */
     public function getEventList()
     {
         // check if user has permission to get events
@@ -173,13 +234,22 @@ class Api extends Rest
         }
         //$this->response(QR_SUCCESS_GET_UNUSED_HASHES, $this->qr->getUsedHashes());
         if ( !($this->qr->getEvents($this->user->getUserId())) ) {
-            $this->throwException(666, "jooo");
+            $this->throwException(EVENT_FAILED_TO_LIST_CODES, "Unable to obtain eventlist");
         } else {
             $this->response(EVENT_SUCCESS_GET_LIST, $this->qr->unusedHash());
         }
         
     }
     
+    /**
+     * editEvent
+     *
+     * Verify input data
+     * Verify user privileges
+     * Updates event information, name and description
+     * Return response success / throwException Failed
+     *
+     */
     public function editEvent() 
     {
         // check if user has permission to edit users
@@ -209,6 +279,15 @@ class Api extends Rest
         $this->response(EVENT_SUCCESS_EDIT, "Event successfully edited");
     }
     
+    /**
+     * getEventCodes
+     *
+     * Verify input data
+     * Verify user privileges
+     * Gets all codes that is tied to an event
+     * Return response success[list] / throwException Failed
+     *
+     */
     public function getEventCodes() 
     {
         // check if user has permission to edit users
@@ -234,6 +313,15 @@ class Api extends Rest
         echo ("Authorization ok.");
     }
     
+    /**
+     * deleteUser
+     *
+     * Verify input data
+     * Verify user privileges
+     * Do not really delete db record, but marks it as disabled
+     * Return response success / throwException Failed
+     *
+     */
     public function deleteUser() {
         // check if user has permission to add users
         if ( !$this->user->checkPrivilige(PERM_USER, PERM_DESCR_DELETE_USER) ) {
@@ -252,7 +340,12 @@ class Api extends Rest
     
     /**
      * addUser
-     * 
+     *
+     * Verify input data
+     * Verify user privileges
+     * Updates user which is feeded with parameter information
+     * Return response success / throwException Failed
+     *
      */
     public function addUser() 
     {
@@ -293,6 +386,15 @@ class Api extends Rest
         
     }
     
+    /**
+     * editUser
+     *
+     * Verify input data
+     * Verify user privileges
+     * Edit user which is feeded with parameter information
+     * Return response success / throwException Failed
+     *
+     */
     public function editUser() 
     {
         // check if user has permission to edit users
@@ -332,7 +434,12 @@ class Api extends Rest
     }
     
     /**
-     * 
+     * getUserPermById
+     *
+     * Verify input data
+     * Gets user permissions
+     * Return response success[list] / throwException Failed
+     *
      */
     public function getUserPermById() 
     {
@@ -377,6 +484,15 @@ class Api extends Rest
         $this->response(SUCCESS_RESPONSE, $this->user->getUsers());
     }
     
+    /**
+     * startProcessingImages
+     * 
+     * Verify input data
+     * Verify user privileges
+     * startProcessingImages; resize, read code from image and link to events
+     * Return response success[how many images was processed] / throwException Failed
+     * 
+     */
     public function startProcessingImages() 
     {
         // if code is null. Then normal processing and no validation
@@ -411,6 +527,9 @@ class Api extends Rest
      * **/
     
     /**
+     * isGalleryAvailable
+     * 
+     * Checks if gallery with specific code is available
      * 
      */
     public function isGalleryAvailable() 
@@ -426,7 +545,10 @@ class Api extends Rest
         $this->response(GALLERY_AVAILABLE, $this->param['code']);
     }
     
-    /*
+    /**
+     * getGallery
+     * 
+     * if gallery is found return response success[list] else nothing found / gallery not available
      * 
      */
     public function getGallery() 

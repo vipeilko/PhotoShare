@@ -1,6 +1,6 @@
 <?php
 /**
- * @version 0.0.1
+ * @version 1.0
  * @author Ville Kouhia
  * 
  * Changelog
@@ -10,6 +10,7 @@
  * + 05.03.2020 Generating qr-code images png
  * + 16.04.2020 Integration with api started
  * + 24.04.2020 get/generate/clear/print codes
+ * + 05.06.2020 First realease version 1.0
  * 
  */
 
@@ -25,20 +26,20 @@ use Endroid\QrCode\ErrorCorrectionLevel;
 
 class qr extends Api {
     
-    public $database;
-    protected array $qrHash; // used to generate codes
-    public array $qrCodes;
-    public $qrText;
+    public $database;           // db connection
+    protected array $qrHash;    // used to generate codes
+    public array $qrCodes;      // 
+    public $qrText;             // text from image
     
-    protected array $usedHash;
-    protected array $unusedHash;
+    protected array $usedHash;  // usedHashes 
+    protected array $unusedHash;// unusedHashesh
     
-    protected array $images;
+    protected array $images;    // images
     
-    protected $event_id;
-    protected $event_code;
-    protected $event_name;
-    protected $event_descr;
+    protected $event_id;        // event id
+    protected $event_code;      // event code
+    protected $event_name;      // event name
+    protected $event_descr;     // event description
     
     
     public function __construct() 
@@ -115,8 +116,8 @@ class qr extends Api {
             }
             
         } catch (Exception $e) {
-            //TODO: uncomment when integratin with API
-            //$this->throwException(DATABASE_ERROR, "Database insert error.");
+            
+            $this->throwException(DATABASE_ERROR, "Database insert error.");
         }
         
         //generate qr-images. This is pretty fast, less than 1.2 sec for 20 qr-images
@@ -127,7 +128,9 @@ class qr extends Api {
             $qrCode->setWriterByName('png');
             $qrCode->setMargin('10');
             $qrCode->setEncoding('UTF-8');
-            $qrCode->setErrorCorrectionLevel(ErrorCorrectionLevel::HIGH());
+            
+            // better change to read codes with default settings
+            //$qrCode->setErrorCorrectionLevel(ErrorCorrectionLevel::HIGH());
             $qrCode->writeFile(IMAGE_STORAGE_PATH . QR_CODE_IMAGE_PATH . $this->$qrHash[$i].'_url.png');
             
             // generates code just with hash if it is also required 
@@ -142,6 +145,9 @@ class qr extends Api {
     }
     
     /**
+     * isFileImage
+     * 
+     * Checks if file is really image or something else
      * 
      * @param unknown $image
      * @return boolean
@@ -196,13 +202,13 @@ class qr extends Api {
      * With image size 9795KB and 4160 x 3120 pixels resizing takes around 1,67 seconds.
      * 
      * TODO:Cache; if it is already made
+     * Cache not implemented yet in version 1.0
      */
     public function resizeImage($image, $width = MEDIUM_IMAGE_MAX_WIDTH, $height = MEDIUM_IMAGE_MAX_HEIGHT, $subpath = IMG_SUBPATH_MEDIUM, $quality = JPEG_QUALITY) 
     {
         // check if file is image
         if (!$this->isFileImage($image) ) {
-            //TODO: Throw Exception
-            die ("kuva ei oikeanlainen");
+            $this->throwException(FILE_IS_NOT_IMAGE, "File is not an image");
         }
         list($imgWidth, $imgHeight) = getimagesize($image);
         
@@ -236,6 +242,13 @@ class qr extends Api {
     }
     
     /**
+     * processImages($userid)
+     * 
+     * process images to user.
+     * 
+     * Processing is executed in order images were modified.
+     * Image code must include album forexample https://doma.in/PhotoShare/client/album/12345678
+     * 
      * 
      */
     public function processImages($userid)
@@ -246,6 +259,7 @@ class qr extends Api {
         }
         
         //get array of images
+        // TODO: user specific locations; not implemented in version 1.0
         $imgs = glob(IMAGE_STORAGE_PATH . "*.{Jpg,jpg,JPG,png,PNG}", GLOB_BRACE);
         //print_r($imgs);
         
@@ -409,62 +423,99 @@ class qr extends Api {
         
     }
     
+    /**
+     * getHashId
+     * 
+     * gets equalient id for a hash from db
+     * 
+     * @param $hash
+     * @return hash[id]
+     */
     public function getHashId($hash) 
     {
-        $db = new Database();
-        $this->database = $db->connect();
-        
-        $sql = ("SELECT Id FROM hash WHERE Hash = :hash");
-        
-        $stmt = $this->database->prepare($sql);
-        $stmt->bindParam(':hash',   $hash,        PDO::PARAM_STR);
-       
-        $stmt->execute();
-        
-        $response = $stmt->fetch(PDO::FETCH_ASSOC);
-        
-        return $response['Id'];
+        try {
+            $db = new Database();
+            $this->database = $db->connect();
+            
+            $sql = ("SELECT Id FROM hash WHERE Hash = :hash");
+            
+            $stmt = $this->database->prepare($sql);
+            $stmt->bindParam(':hash',   $hash,        PDO::PARAM_STR);
+           
+            $stmt->execute();
+            
+            $response = $stmt->fetch(PDO::FETCH_ASSOC);
+        } catch (Exception $e) {
+            $this->ThrowException(DATABASE_ERROR, $e);
+        }
+        if (isset($response['Id'])) {
+            return $response['Id'];
+        }
+        return false;
     }
     
+    /**
+     * getLastUsedHash
+     * 
+     * gets last used hash in processing, stored in settings table
+     * 
+     * @param  $userid
+     * @return lastusedhash
+     */
     public function getLastUsedHash($userid) 
     {
-        $db = new Database();
-        $this->database = $db->connect();
-        
-        // we want get setting which is named "lasthash"
-        $stype = "lasthash";
-        $sql = ("SELECT Value FROM Settings WHERE UserId = :userid AND SettingType = :stype");
-        
-        $stmt = $this->database->prepare($sql);
-        $stmt->bindParam(':userid',   $userid);
-        $stmt->bindParam(':stype',    $stype);
-        
-        $stmt->execute();
-        
-        $hash = $stmt->fetch(PDO::FETCH_ASSOC);
-        
-        //$stmt->debugDumpParams(); //debug
+        try {
+            $db = new Database();
+            $this->database = $db->connect();
+            
+            // we want get setting which is named "lasthash"
+            $stype = "lasthash";
+            $sql = ("SELECT Value FROM Settings WHERE UserId = :userid AND SettingType = :stype");
+            
+            $stmt = $this->database->prepare($sql);
+            $stmt->bindParam(':userid',   $userid);
+            $stmt->bindParam(':stype',    $stype);
+            
+            $stmt->execute();
+            
+            $hash = $stmt->fetch(PDO::FETCH_ASSOC);
+            //$stmt->debugDumpParams(); //debug
+        } catch (Exception $e) {
+            $this->ThrowException(DATABASE_ERROR, $e);
+        }
         
         return $hash['Value'];
     }
     
+    /**
+     * setLastUsedHash
+     * 
+     * sets last used hash to db to an user
+     * 
+     * @param $userid
+     * @param $lasthash
+     * @return boolean true or failed throwException
+     */
     public function setLastUsedHash($userid, $lasthash)
     {
-        $db = new Database();
-        $this->database = $db->connect();
-        
-        // we want get setting which is named "lasthash"
-        $stype = "lasthash";
-        $sql = ("UPDATE Settings SET Value = :value WHERE UserId = :userid AND SettingType = :stype");
-        
-        $stmt = $this->database->prepare($sql);
-        $stmt->bindParam(':userid',   $userid);
-        $stmt->bindParam(':value',    $lasthash);
-        $stmt->bindParam(':stype',    $stype);
-        //$stmt->debugDumpParams(); //debug
-        
-        $stmt->execute();
-        
+        try {
+            $db = new Database();
+            $this->database = $db->connect();
+            
+            // we want get setting which is named "lasthash"
+            $stype = "lasthash";
+            $sql = ("UPDATE Settings SET Value = :value WHERE UserId = :userid AND SettingType = :stype");
+            
+            $stmt = $this->database->prepare($sql);
+            $stmt->bindParam(':userid',   $userid);
+            $stmt->bindParam(':value',    $lasthash);
+            $stmt->bindParam(':stype',    $stype);
+            //$stmt->debugDumpParams(); //debug
+            
+            $stmt->execute();
+        } catch (Exception $e) {
+            $this->ThrowException(DATABASE_ERROR, $e);
+        }
         
         return true;
     }
@@ -507,11 +558,23 @@ class qr extends Api {
             return true;
 
         } catch (Exception $e) {
-            $this->ThrowException(DATABASE_ERROR, "Virhe: " . $e);
+            $this->ThrowException(DATABASE_ERROR, $e);
         }
          
     }
     
+    /**
+     * getUnusedHash
+     * 
+     * get unused hash list from db. On default will get codes that are tied to event and first 100
+     * 
+     * @param $userid
+     * @param $type
+     * @param $disabled
+     * @param $limit_start
+     * @param $limit_end
+     * @return boolean
+     */
     public function getUnusedHash($userid, $type = QR_CODE_TYPE_GALLERY, $disabled = 0, $limit_start = 0, $limit_end = 100)
     {
         $db = new Database();
@@ -561,24 +624,46 @@ class qr extends Api {
             $this->ThrowException(DATABASE_ERROR, $e);
         }
         
+        return false;
+        
     }
 
+    /**
+     * unusedHash
+     * 
+     * @return unusedhash
+     */
     public function unusedHash()
     {
         if ( !empty($this->unusedHash) ) {
             return $this->unusedHash;
         }
-
+       
     }
     
+    /**
+     * usedHash
+     * 
+     * @return usedHash
+     */
     public function usedHash()
     {
         if ( !empty($this->usedHash) ) {
             return $this->usedHash;
         }
-        
+       
     }
     
+    /**
+     * deleteUnusedCodes
+     * 
+     * deletes unused codes
+     * 
+     * @param  $userid
+     * @param  $disabled
+     * @param  $type
+     * @return boolean / or catch error
+     */
     public function deleteUnusedCodes($userid, $disabled = 0, $type = 0) 
     {
         $db = new Database();
@@ -783,6 +868,14 @@ class qr extends Api {
         return true;
     }
     
+    /**
+     * getEventCodesFromDb
+     * 
+     * 
+     * 
+     * @param $userid
+     * @return boolean
+     */
     public function getEventCodesFromDb($userid) 
     {
         try {
@@ -810,48 +903,93 @@ class qr extends Api {
         } catch (Exception $e) {
             $this->throwException(DATABASE_ERROR, $e);
         }
-        return true;
+        return false;
     }
     
+    /**
+     * setEventId
+     * 
+     * @param $value
+     */
     public function setEventId($value) 
     {
         $this->event_id = $value;
     }
+    
+    /**
+     * getEventID
+     * 
+     * @return eventid
+     */
     public function getEventId()
     {
         return $this->event_id;
     }
     
+    /**
+     * setEventCode
+     * 
+     * @param $value
+     */
     public function setEventCode($value)
     {
         $this->event_code = $value;
     }
+    
+    /**
+     * getEventCode
+     * 
+     * @return event_code
+     */
     public function getEventCode()
     {
         return $this->event_code;
     }
     
+    /**
+     * setEventName
+     * 
+     * @param name $value 
+     */
     public function setEventName($value)
     {
         $this->event_name = $value;
     }
+    
+    /**
+     * getEventName
+     * 
+     * @return event_name
+     */
     public function getEventName()
     {
         return $this->event_name;
     }
 
+    /**
+     * setEventDescr
+     * 
+     * @param event_descr $value
+     */
     public function setEventDescr($value)
     {
         $this->event_descr = $value;
     }
+    
+    /**
+     * getEventDescr
+     * 
+     * @return event_descr
+     */
     public function getEventDescr()
     {
         return $this->event_descr;
     }
 
     /**
+     * getImages
      * 
-     * @return unknown|boolean
+     * @return image[list]|boolean
      */
     public function getImages()
     {
@@ -862,6 +1000,13 @@ class qr extends Api {
         return false;
     }
     
+    /**
+     * checkGalleryAvailability
+     * 
+     * 
+     * 
+     * @return boolean
+     */
     public function checkGalleryAvailability()
     {
         try {
@@ -887,9 +1032,13 @@ class qr extends Api {
         } catch (Exception $e) {
             $this->throwException(DATABASE_ERROR, $e);
         }
+        return false;
     }
     
     /**
+     * getGallery
+     * 
+     * getGallery for event_code
      * 
      * @return boolean
      */

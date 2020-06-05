@@ -4,8 +4,8 @@
  * PhotoShare API 
  * 
  * @author Ville Kouhia
- * @version 0.0.1
- * @date 
+ * @version 1.0
+ * 
  * 
  */
     

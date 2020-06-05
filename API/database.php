@@ -4,9 +4,9 @@
  * Database
  * 
  * @author Ville Kouhia
+ * @version 1.0
  * 
  * Handles databaseconnection
- * TODO: Easy way to change different database. PDO supported databases https://www.php.net/manual/en/pdo.drivers.php
  * 
  */
 
@@ -21,6 +21,12 @@ class Database
     private $password = null;
     private $dbconnection = null;
     
+    /**
+     * __construct gets information from credentials to db connection
+     * 
+     * To change database edit credentials.php
+     * 
+     */
     public function __construct () 
     {
         $credentials = new credentials();
@@ -30,7 +36,13 @@ class Database
         $this->server = $credentials->getServer();
     }
     
-
+    /**
+     * Database->connect
+     * 
+     * Connects to defined database 
+     * 
+     * @return unknown
+     */
     public function connect()
     {
         try {
@@ -45,6 +57,11 @@ class Database
         }
     }
     
+    /**
+     *  Database->disconnect
+     *  
+     *  Disconnects connection from database
+     */
     public function disconnect() 
     {
         $this->dbconnection = null;
