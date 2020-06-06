@@ -381,6 +381,7 @@ class user {
                 $stmt->execute();
                 
             }
+
         } catch (Exception $e) {
             $this->throwException(DATABASE_ERROR, $e);
         }

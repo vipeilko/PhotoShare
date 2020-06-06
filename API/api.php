@@ -375,11 +375,17 @@ class Api extends Rest
         $tempUser->setLastName($this->param['lastname']);
         $tempUser->setEmail($this->param['email']);
         
-        if ( $setpassword ){
+        if ( $setpassword ) {
             $tempUser->addUser($this->param['password']);
         } else {
             // should never get here
             $this->throwException(666, "ERROR - cannot add user without password");
+        }
+        
+        // add last used hash setting to new user default settings is 0
+        if ( !$this->qr->insertLastUsedHash($tempUser->getUserId(), 0) ) {
+            // failed
+            // not too bad if fails, but processing codes might not succseed  
         }
         
         $this->response(SUCCESS_RESPONSE, $tempUser->setUserPermissions($this->param['permissions']));

@@ -6,6 +6,7 @@
  * 
  */
 
+
 // To handle between login screen and gallery/events
 // remove first and last slash if available
 $path = rtrim($_SERVER['REQUEST_URI'], '/');

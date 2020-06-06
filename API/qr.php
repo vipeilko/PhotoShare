@@ -521,6 +521,40 @@ class qr extends Api {
     }
     
     /**
+     * insertLastUsedHash
+     * 
+     * inserts lastu used hash to db to an user
+     * 
+     * @param $userid
+     * @param $lasthash
+     * @return true if success else ThrowException
+     */
+    public function insertLastUsedHash($userid, $lasthash) 
+    {
+        try {
+            $db = new Database();
+            $this->database = $db->connect();
+            
+            // we want insert setting which is named "lasthash"
+            $stype = "lasthash";
+            $sql = ("INSERT INTO Settings  (UserId, Value, SettingType) 
+                                    VALUES (:userid, :value, :stype)");
+            
+            $stmt = $this->database->prepare($sql);
+            $stmt->bindParam(':userid',   $userid);
+            $stmt->bindParam(':value',    $lasthash);
+            $stmt->bindParam(':stype',    $stype);
+            //$stmt->debugDumpParams(); //debug
+            
+            $stmt->execute();
+        } catch (Exception $e) {
+            $this->ThrowException(DATABASE_ERROR, $e);
+        }
+        
+        return true;
+    }
+    
+    /**
      * getUsedHashes
      * 
      * @param number $limit_start
